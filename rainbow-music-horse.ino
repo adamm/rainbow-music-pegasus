@@ -12,6 +12,7 @@
 
 
 int16_t data[DATA_SIZE];
+int16_t decay[DATA_SIZE];
 uint16_t hue_offset = 0;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -45,9 +46,10 @@ void loop()
     ZeroFFT(data, DATA_SIZE);
 
     for (i = 0; i < DATA_SIZE; i++) {
-        data[i] >>= 3;
-        if (data[i] <= 2)
+        data[i] >>= 4;
+        if (data[i] <= 4)
             data[i] = 0;
+        data[i] = pow(data[i], 2);
     }
 
     for (i = 0; i < DATA_SIZE/2; i++) {
@@ -61,6 +63,14 @@ void loop()
 
     }
     Serial.println("|");
+
+    for (i = 0; i < DATA_SIZE; i++) {
+        if ((data[i] == 0 ||
+            data[i] < decay[i]) &&
+            (decay[i] > 0)) {
+            data[i] = decay[i] - 1;
+        }
+    }
 
     strip.setBrightness(255);
     uint32_t color;
@@ -77,5 +87,18 @@ void loop()
         strip.setPixelColor(j, color);
         i += 3;
     }
+    memcpy(decay, data, sizeof(int16_t)*DATA_SIZE);
+
+    for (i = 0; i < DATA_SIZE/2; i++) {
+        // Serial.print(FFT_BIN(i, FS, DATA_SIZE));
+        // Serial.print(" Hz: ");
+        int16_t val = (decay[i]);
+        if (val > 0)
+            Serial.printf("%3d", val);
+        else
+            Serial.print("   ");
+    }
+    Serial.println("*");
+
     strip.show();                          //  Update strip to match
 }
