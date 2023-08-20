@@ -1,11 +1,18 @@
 
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_ZeroFFT.h>
+#include <math.h>
+
 
 #define LED_PIN     0
 #define MIC_PIN     1
 #define LED_COUNT   6
+#define DATA_SIZE   64
+#define FS          8000 // Sample Rate
 
-const int sampleWindow = 100; // Sample window width in mS (250 mS = 4Hz)
+
+int16_t data[DATA_SIZE];
+uint16_t hue_offset = 0;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -22,47 +29,53 @@ void setup()
 
 void loop() 
 {
-    unsigned long start= millis();  // Start of sample window
-    unsigned int peakToPeak = 0;   // peak-to-peak level
+    int32_t i = 0;
+    int32_t avg = 0;
 
-    unsigned int signalMax = 0;
-    unsigned int signalMin = 1024;
-
-    // collect data for 250 miliseconds
-    while (millis() - start < sampleWindow) {
-        int knock = analogRead(MIC_PIN);
-        if (knock < 1024) {  //This is the max of the 10-bit ADC so this loop will include all readings
-            if (knock > signalMax) {
-                signalMax = knock;  // save just the max levels
-            }
-            else if (knock < signalMin) {
-                signalMin = knock;  // save just the min levels
-            }
-        }
+    for (i = 0; i < DATA_SIZE; i++) {
+        int16_t val = analogRead(MIC_PIN);
+        avg += val;
+        data[i] = val;
     }
-    Serial.print("analogRead: ");
-    Serial.print(signalMin);
-    Serial.print("-");
-    Serial.print(signalMax);
+    avg = avg / DATA_SIZE;
+    for (i = 0; i < DATA_SIZE; i++) {
+        data[i] = (data[i] - avg) * 32;
+    }
 
-    peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    double volts = (peakToPeak * 3.3) / 1024;  // convert to volts
+    ZeroFFT(data, DATA_SIZE);
 
-    Serial.print(" volts: ");
-    Serial.print(volts);
+    for (i = 0; i < DATA_SIZE; i++) {
+        data[i] >>= 3;
+        if (data[i] <= 2)
+            data[i] = 0;
+    }
 
-    double brightness = volts * 255 / 3.3;
-    uint32_t color = strip.Color(255, 255, 255);
+    for (i = 0; i < DATA_SIZE/2; i++) {
+        // Serial.print(FFT_BIN(i, FS, DATA_SIZE));
+        // Serial.print(" Hz: ");
+        int16_t val = (data[i]);
+        if (val > 0)
+            Serial.printf("%3d", val);
+        else
+            Serial.print("   ");
 
-    strip.setBrightness((int)brightness);
-    strip.setPixelColor(0, color);
-    strip.setPixelColor(1, color);
-    strip.setPixelColor(2, color);
-    strip.setPixelColor(3, color);
-    strip.setPixelColor(4, color);
-    strip.setPixelColor(5, color);
+    }
+    Serial.println("|");
+
+    strip.setBrightness(255);
+    uint32_t color;
+    uint16_t r, g, b;
+    int j = 0, k = 0;
+    for (j = 0, i = 0; j < 6; j++) {
+        r = 0;
+        for (k = 0; k < 3; k++) {
+            r += data[i+k];
+            g += data[i+k+1];
+            b += data[i+k+2];
+        }
+        color = strip.Color((uint8_t)r, (uint8_t)g, (uint8_t)b);
+        strip.setPixelColor(j, color);
+        i += 3;
+    }
     strip.show();                          //  Update strip to match
-
-    Serial.print(" brightness: ");
-    Serial.println(brightness);
 }
