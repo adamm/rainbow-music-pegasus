@@ -10,7 +10,7 @@
 #define SAMPLE_SIZE 64
 #define SPECTRUM_SIZE (SAMPLE_SIZE / 2)
 #define NOISE_LIMIT 100
-#define LOW_BIN     3
+#define LOW_BIN     4
 #define HIGH_BIN    1000
 
 int16_t data[SAMPLE_SIZE];
@@ -103,17 +103,24 @@ void loop()
     }
 
     strip.setBrightness(255);
-    uint32_t color;
-    uint16_t r, g, b;
-    int j = 0, k = 0;
-    for (j = 0, i = 0; j < 6; j++) {
-        r = data[i];
-        g = data[i+1];
-        b = data[i+2];
-        color = strip.Color((uint8_t)r, (uint8_t)g, (uint8_t)b);
-        strip.setPixelColor(j, color);
-        i += 3;
+    uint16_t r[6], g[6], b[6];
+
+    int j = 0;
+    for (i = 0; i < 6; i++) {
+        r[i] = data[j++];
     }
+    for (i = 0; i < 6; i++) {
+        g[i] = data[j++];
+    }
+    for (i = 0; i < 6; i++) {
+        b[i] = data[j++];
+    }
+
+    for (i = 0; i < 6; i++) {
+        uint32_t color = strip.Color((uint8_t)r[i], (uint8_t)g[i], (uint8_t)b[i]);
+        strip.setPixelColor(i, color);
+    }
+
     memcpy(decay, data, sizeof(int16_t)*SAMPLE_SIZE);
 
     // Serial.print("decay:\t");
