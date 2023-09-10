@@ -1,132 +1,118 @@
 
+#include <arduinoFFT.h>
 #include <Adafruit_NeoPixel.h>
-#include <Adafruit_ZeroFFT.h>
-#include <math.h>
+#include <Arduino_APA102.h>
 
+#define NUM_PIXELS 8
+#define PIXELS_PIN 0
+#define MIC_PIN 1
 
-#define LED_PIN     0
-#define MIC_PIN     1
-#define LED_COUNT   6
-#define SAMPLE_SIZE 64
-#define SPECTRUM_SIZE (SAMPLE_SIZE / 2)
-#define NOISE_LIMIT 100
-#define LOW_BIN     4
-#define HIGH_BIN    1000
+arduinoFFT FFT;
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_PIXELS, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
+Arduino_APA102 led(1, INTERNAL_DS_DATA, INTERNAL_DS_CLK);
 
-int16_t data[SAMPLE_SIZE];
-int16_t decay[SAMPLE_SIZE];
-float   spectrum[SPECTRUM_SIZE];
+const uint16_t samples = 32;            //This value MUST ALWAYS be a power of 2
+const double samplingFrequency = 2500;  //Hz, must be less than 10000 due to ADC
 
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+unsigned int sampling_period_us;
+unsigned long microseconds;
 
-void setup() 
-{
-    Serial.begin(115200);
-    analogReadResolution(12);
-    pinMode(MIC_PIN, INPUT);
+double vReal[samples];
+double vImag[samples];
+double vDecay[samples];
 
-    strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-    strip.show();            // Turn OFF all pixels ASAP
-    strip.setBrightness(0);
+enum {
+  SCL_INDEX,
+  SCL_TIME,
+  SCL_FREQUENCY,
+};
+
+void setup() {
+  // Shut off onboard APA102 on Trinket M0
+  led.begin();
+  led.setPixelColor(0, 0, 0, 0);
+  led.show();
+
+  strip.begin();
+  memset(vDecay, 0, sizeof(double) * samples);
+  sampling_period_us = round(1000000 * (1.0 / samplingFrequency));
+  Serial.begin(115200);
 }
 
 
-void print_data(int16_t* data) {
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
-        int16_t val = (data[i]);
-        if (val > 0) {
-            Serial.printf(" %4ld ", val);
-        }
-        else if (val < 0) {
-            Serial.printf("%+5ld ", val);
-        }
-        else {
-            Serial.print("      ");
-        }
-
+void loop() {
+  /*SAMPLING*/
+  microseconds = micros();
+  for (int i = 0; i < samples; i++) {
+    vReal[i] = analogRead(MIC_PIN);
+    vImag[i] = 0;
+    while (micros() - microseconds < sampling_period_us) {
+      //empty loop
     }
-    Serial.println("|");
+    microseconds += sampling_period_us;
+  }
+  FFT = arduinoFFT(vReal, vImag, samples, samplingFrequency); /* Create FFT object */
+  /* Print the results of the sampling according to time */
+  //  Serial.println("Data:");
+  //  PrintVector(vReal, samples, SCL_TIME);
+  FFT.DCRemoval();
+  FFT.Windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
+  //  Serial.println("Weighed data:");
+  //  PrintVector(vReal, samples, SCL_TIME);
+  FFT.Compute(FFT_FORWARD);
+  //  Serial.println("Computed Real values:");
+  //  PrintVector(vReal, samples, SCL_INDEX);
+  //  Serial.println("Computed Imaginary values:");
+  //  PrintVector(vImag, samples, SCL_INDEX);
+  FFT.ComplexToMagnitude();
+
+  uint8_t colour[samples] = { 0 };
+
+  for (int i = 0; i < samples; i++) {
+    strip.setPixelColor(i, 0, 0, 0);
+    vReal[i] = abs(vReal[i]);
+    if (vReal[i] < 100)
+      vReal[i] = 0;
+    else
+      vReal[i] -= 100;
+
+    if (vReal[i] > 500)
+      colour[i] = 255;
+    else
+      colour[i] = vReal[i] / 2;
+  }
+
+  for (int i = 0, j = 0; i < samples && j < NUM_PIXELS / 2; i += 6) {
+    strip.setPixelColor(j, colour[i], colour[i + 1], colour[i + 2]);
+    strip.setPixelColor(NUM_PIXELS - j, colour[i + 3], colour[i + 4], colour[i + 5]);
+    j++;
+  }
+  strip.show();
+
+  //  PrintVector(vReal, (samples >> 1), SCL_FREQUENCY);
 }
 
-
-void loop() 
-{
-    int32_t i = 0;
-    int32_t avg = 0;
-
-    for (i = 0; i < SAMPLE_SIZE; i++) {
-        int16_t val = (analogRead(MIC_PIN) - 2048);
-        if ((val > 0 && val < NOISE_LIMIT) ||
-            (val < 0 && val > -NOISE_LIMIT))
-            val = 0;
-        data[i] = val;
-        avg += val;
+void PrintVector(double *vData, uint16_t bufferSize, uint8_t scaleType) {
+  for (uint16_t i = 0; i < bufferSize; i++) {
+    double abscissa;
+    /* Print abscissa value */
+    switch (scaleType) {
+      case SCL_INDEX:
+        abscissa = (i * 1.0);
+        break;
+      case SCL_TIME:
+        abscissa = ((i * 1.0) / samplingFrequency);
+        break;
+      case SCL_FREQUENCY:
+        abscissa = ((i * 1.0 * samplingFrequency) / samples);
+        break;
     }
-
-    // Serial.print("raw:\t");
-    // print_data(data);
-
-    avg = avg / SAMPLE_SIZE;
-    for (i = 0; i < SAMPLE_SIZE; i++) {
-        if (data[i] != 0)
-            data[i] = data[i] - avg;
-    }
-
-    // Serial.printf("avg:%-d", avg);
-    // print_data(data);
-
-    ZeroFFT(data, SAMPLE_SIZE);
-
-    // Serial.print("fft:\t");
-    // print_data(data);
-
-    for (i = 0; i < SAMPLE_SIZE; i++) {
-        if (data[i] <= LOW_BIN)
-            data[i] = 0;
-        if (data[i] >= HIGH_BIN)
-            data[i] = HIGH_BIN;
-        data[i] *= 3;
-    }
-
-    // Serial.print("filter:\t");
-    // print_data(data);
-
-    for (i = 0; i < SAMPLE_SIZE; i++) {
-        if ((data[i] == 0 ||
-            data[i] < decay[i]) &&
-            (decay[i] > 0)) {
-            // if (decay[i] > 1)
-                data[i] = decay[i] - 1;
-            // else
-            //     data[i] = 0;
-        }
-    }
-
-    strip.setBrightness(255);
-    uint16_t r[6], g[6], b[6];
-
-    int j = 0;
-    for (i = 0; i < 6; i++) {
-        r[i] = data[j++];
-    }
-    for (i = 0; i < 6; i++) {
-        g[i] = data[j++];
-    }
-    for (i = 0; i < 6; i++) {
-        b[i] = data[j++];
-    }
-
-    for (i = 0; i < 6; i++) {
-        uint32_t color = strip.Color((uint8_t)r[i], (uint8_t)g[i], (uint8_t)b[i]);
-        strip.setPixelColor(i, color);
-    }
-
-    memcpy(decay, data, sizeof(int16_t)*SAMPLE_SIZE);
-
-    // Serial.print("decay:\t");
-    // print_data(decay);
-
-    strip.show();                          //  Update strip to match
-
-    // delay(1000);
+    Serial.print(abscissa, 1);
+    if (scaleType == SCL_FREQUENCY)
+      Serial.print("Hz");
+    Serial.print(":");
+    Serial.print(vData[i], 2);
+    Serial.print(",");
+  }
+  Serial.println();
 }
