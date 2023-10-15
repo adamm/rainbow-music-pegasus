@@ -1,9 +1,31 @@
+/*
+
+	Rainbow music horse 3D printed project
+        Copyright (C) 2023 Adam McDaniel
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    Uses code from the FFT_03 example of use of the FFT library to compute FFT
+    for a signal sampled through the ADC.
+        Copyright (C) 2018 Enrique Condés and Ragnar Ranøyen Homb
+*/
 
 #include <arduinoFFT.h>
 #include <Adafruit_NeoPixel.h>
 #include <Arduino_APA102.h>
 
-#define NUM_PIXELS 8
+#define NUM_PIXELS 21
 #define PIXELS_PIN 0
 #define MIC_PIN 1
 
@@ -11,8 +33,8 @@ arduinoFFT FFT;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_PIXELS, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
 Arduino_APA102 led(1, INTERNAL_DS_DATA, INTERNAL_DS_CLK);
 
-const uint16_t samples = 32;            //This value MUST ALWAYS be a power of 2
-const double samplingFrequency = 2500;  //Hz, must be less than 10000 due to ADC
+const uint16_t samples = 64;            //This value MUST ALWAYS be a power of 2
+const double samplingFrequency = 5000;  //Hz, must be less than 10000 due to ADC
 
 unsigned int sampling_period_us;
 unsigned long microseconds;
@@ -82,9 +104,38 @@ void loop() {
       colour[i] = vReal[i] / 2;
   }
 
-  for (int i = 0, j = 0; i < samples && j < NUM_PIXELS / 2; i += 6) {
+
+/* The below code applies the following pattern a 21-neopixel light strip,
+ * with 9 LEDs on the left, 3 on the top, and 9 on the right:
+
+      C1C2C3
+      ______
+  L1 |      | R1
+  L2 |      | R2
+  L3 |      | R3
+  L4 |      | R4
+  L5 |      | R5
+  L6 |      | R6
+  L7 |      | R7
+  L8 |      | R8
+  L9 |      | R9
+     ⌃
+  data in
+
+  L1..L9 and R1..R9 display the frequency-colour registered by the FFT
+  algorithm. The lower the L# or R#, the lower the frequency.
+
+  TODO: C1..C3 should be a static colour to light up the whole horse.
+*/
+
+  int i = 0;
+  for (int j = N_PIXELS/2+2; i < samples && j < N_PIXELS; i += 3) {
     strip.setPixelColor(j, colour[i], colour[i + 1], colour[i + 2]);
-    strip.setPixelColor(NUM_PIXELS - j, colour[i + 3], colour[i + 4], colour[i + 5]);
+    j++;
+  }
+  i+=9;
+  for (int j = 0; i < samples && j < (N_PIXELS / 2)-1; i += 3) {
+    strip.setPixelColor(j, colour[i], colour[i + 1], colour[i + 2]);
     j++;
   }
   strip.show();
