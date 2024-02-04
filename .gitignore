@@ -1,5 +1,5 @@
-build/
-sdkconfig
-sdkconfig.old
-.vscode/settings.json
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/.vscode/settings.json
 .DS_Store
