@@ -1,79 +1,78 @@
 /*
 
-  ESP32 FFT
-  =========
+	FFT library
+	Copyright (C) 2010 Didier Longueville
+	Copyright (C) 2014 Enrique Condes
 
-  This provides a vanilla radix-2 FFT implementation and a test example.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-  Author
-  ------
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+	GNU General Public License for more details.
 
-  This code was written by [Robin Scheibler](http://www.robinscheibler.org) during rainy days in October 2017.
-
-  License
-  -------
-
-  Copyright (c) 2017 Robin Scheibler
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+	You should have received a copy of the GNU General Public License
+	along with this program.    If not, see <http://www.gnu.org/licenses/>.
 
 */
-#ifndef __FFT_H__
-#define __FFT_H__
 
-typedef enum
-{
-  FFT_REAL,
-  FFT_COMPLEX
-} fft_type_t;
+#ifndef FFT_H
+#define FFT_H
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef enum
-{
-  FFT_FORWARD,
-  FFT_BACKWARD
-} fft_direction_t;
+#include <math.h>
 
-#define FFT_OWN_INPUT_MEM 1
-#define FFT_OWN_OUTPUT_MEM 2
 
-typedef struct
-{
-  int size;  // FFT size
-  float *input;  // pointer to input buffer
-  float *output; // pointer to output buffer
-  float *twiddle_factors;  // pointer to buffer holding twiddle factors
-  fft_type_t type;   // real or complex
-  fft_direction_t direction; // forward or backward
-  unsigned int flags; // FFT flags
-} fft_config_t;
+typedef enum {
+    Reverse, Forward
+} FFTDirection;
 
-fft_config_t *fft_init(int size, fft_type_t type, fft_direction_t direction, float *input, float *output);
-void fft_destroy(fft_config_t *config);
-void fft_execute(fft_config_t *config);
-void fft(float *input, float *output, float *twiddle_factors, int n);
-void ifft(float *input, float *output, float *twiddle_factors, int n);
-void rfft(float *x, float *y, float *twiddle_factors, int n);
-void irfft(float *x, float *y, float *twiddle_factors, int n);
-void fft_primitive(float *x, float *y, int n, int stride, float *twiddle_factors, int tw_stride);
-void split_radix_fft(float *x, float *y, int n, int stride, float *twiddle_factors, int tw_stride);
-void ifft_primitive(float *input, float *output, int n, int stride, float *twiddle_factors, int tw_stride);
-void fft8(float *input, int stride_in, float *output, int stride_out);
-void fft4(float *input, int stride_in, float *output, int stride_out);
+typedef enum {
+    Rectangle,
+    Hamming,
+    Hann,
+    Triangle,
+    Nuttall,
+    Blackman,
+    Blackman_Nuttall,
+    Blackman_Harris,
+    Flat_top,
+    Welch
+} FFTWindow;
 
-#endif // __FFT_H__
+/* Custom constants */
+#define FFT_FORWARD Forward
+#define FFT_REVERSE Reverse
+
+/* Windowing type */
+#define FFT_WIN_TYP_RECTANGLE           Rectangle
+#define FFT_WIN_TYP_HAMMING             Hamming
+#define FFT_WIN_TYP_HANN                Hann
+#define FFT_WIN_TYP_TRIANGLE            Triangle
+#define FFT_WIN_TYP_NUTTALL             Nuttall
+#define FFT_WIN_TYP_BLACKMAN            Blackman
+#define FFT_WIN_TYP_BLACKMAN_NUTTALL    Blackman_Nuttall
+#define FFT_WIN_TYP_BLACKMAN_HARRIS     Blackman_Harris
+#define FFT_WIN_TYP_FLT_TOP             Flat_top
+#define FFT_WIN_TYP_WELCH               Welch
+/*Mathematial constants*/
+#define twoPi 6.28318531
+#define fourPi 12.56637061
+#define sixPi 18.84955593
+
+void fft_init(float *vReal, float *vImag, uint16_t samples,
+                     float samplingFrequency);
+
+void fft_complexToMagnitude();
+void fft_compute(FFTDirection dir);
+void fft_dcRemoval();
+float fft_majorPeak();
+void fft_windowing(FFTWindow windowType, FFTDirection dir);
+float fft_MajorPeakParabola();
+
+
+#endif
