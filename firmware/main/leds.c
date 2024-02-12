@@ -18,7 +18,7 @@
 
 static const char *TAG = "leds";
 
-static uint8_t led_strip_pixels[CONFIG_LED_TOTAL * 3];
+static uint8_t led_strip_pixels[CONFIG_MAX_LEDS * 3];
 
 /**
  * @brief Simple helper function, converting HSV color space to RGB color space
@@ -80,7 +80,7 @@ void leds_init(void)
     ESP_LOGI(TAG, "Create RMT TX channel");
     rmt_tx_channel_config_t tx_chan_config = {
         .clk_src = RMT_CLK_SRC_DEFAULT, // select source clock
-        .gpio_num = CONFIG_LED_GPIO,
+        .gpio_num = CONFIG_GPIO_RGB_DATA,
         .mem_block_symbols = 64, // increase the block size can make the LED less flickering
         .resolution_hz = RMT_LED_STRIP_RESOLUTION_HZ,
         .trans_queue_depth = 4, // set the number of transactions that can be pending in the background
@@ -102,9 +102,9 @@ void leds_display(uint8_t* values, int total_values) {
         .loop_count = 0, // no transfer loop
     };
 
-    for (int i = 0; (i < total_values) && (i < CONFIG_LED_TOTAL*3/2); i++) {
-        led_strip_pixels[CONFIG_LED_TOTAL*3/2+i] = values[i];
-        led_strip_pixels[CONFIG_LED_TOTAL*3/2-1-i] = values[i];
+    for (int i = 0; (i < total_values) && (i < _config_total_leds*3/2); i++) {
+        led_strip_pixels[_config_total_leds*3/2+i] = values[i];
+        led_strip_pixels[_config_total_leds*3/2-1-i] = values[i];
         // Flush RGB values to LEDs
     }
     ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));

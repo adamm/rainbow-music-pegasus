@@ -17,6 +17,7 @@
 
 
 #include "adc.h"
+#include "config.h"
 #include "fft.h"
 #include "leds.h"
 
@@ -24,7 +25,7 @@ const static char *TAG = "rmp";
 
 
 
-#define N_SAMPLES 128
+#define N_SAMPLES 256
 
 __attribute__((aligned(16))) float vReal[N_SAMPLES];
 __attribute__((aligned(16))) float vImag[N_SAMPLES];
@@ -36,6 +37,8 @@ float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
 
 void app_main(void)
 {
+    config_init();
+
     adc_init();
     leds_init();
     fft_init(vReal, vImag, N_SAMPLES, sampling_frequency);
@@ -60,7 +63,7 @@ void app_main(void)
         uint8_t colours[N_SAMPLES] = {0};
 
         for (int i = 0; i < N_SAMPLES; i++) {
-            if (vReal[i] < 100)
+            if (vReal[i] < 200)
                 vReal[i] = 0;
             else if (vReal[i] > 255)
                 vReal[i] = 128;
