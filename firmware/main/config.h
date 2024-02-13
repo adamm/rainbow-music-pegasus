@@ -20,5 +20,6 @@
 #define CONFIG_MAX_LEDS               24
 
 extern uint8_t _config_total_leds;
+extern uint16_t _config_total_samples;
 
 void config_init();

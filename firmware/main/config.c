@@ -7,6 +7,7 @@
 const static char *TAG = "config";
 
 uint8_t _config_total_leds = 0;
+uint16_t _config_total_samples = 0;
 
 void config_init() {
     // Set the total number of leds configured by looking at the jumpers JP5, JP6, JP7. 
@@ -40,5 +41,13 @@ void config_init() {
     if (_config_total_leds > CONFIG_MAX_LEDS)
         _config_total_leds = CONFIG_MAX_LEDS;
 
+    if (_config_total_leds <= 10)
+        _config_total_samples = 64;
+    else if (_config_total_leds <= 16)
+        _config_total_samples = 128;
+    else
+        _config_total_samples = 256;
+
     ESP_LOGI(TAG, "Total LEDs configured is %d", _config_total_leds);
+    ESP_LOGI(TAG, "Total samples configured is %d", _config_total_samples);
 }
