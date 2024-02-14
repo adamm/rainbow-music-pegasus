@@ -1,12 +1,12 @@
 %TF.GenerationSoftware,KiCad,Pcbnew,7.0.5-0*%
-%TF.CreationDate,2024-02-12T14:58:35-07:00*%
+%TF.CreationDate,2024-02-13T19:00:30-07:00*%
 %TF.ProjectId,rainbow-music-pegasus,7261696e-626f-4772-9d6d-757369632d70,rev?*%
 %TF.SameCoordinates,Original*%
 %TF.FileFunction,Soldermask,Bot*%
 %TF.FilePolarity,Negative*%
 %FSLAX46Y46*%
 G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW 7.0.5-0) date 2024-02-12 14:58:35*
+G04 Created by KiCad (PCBNEW 7.0.5-0) date 2024-02-13 19:00:30*
 %MOMM*%
 %LPD*%
 G01*
@@ -134,9 +134,9 @@ X173350000Y-98950000D03*
 %TD*%
 D21*
 %TO.C,JP1*%
-X105072500Y-100600000D03*
+X105075000Y-100600000D03*
 D22*
-X106522500Y-100600000D03*
+X106525000Y-100600000D03*
 %TD*%
 D21*
 %TO.C,JP2*%
@@ -164,8 +164,8 @@ X121884500Y-96150000D03*
 %TD*%
 D23*
 %TO.C,C12*%
-X109847500Y-101375000D03*
-X109847500Y-99825000D03*
+X109747500Y-101375000D03*
+X109747500Y-99825000D03*
 %TD*%
 D20*
 %TO.C,D14*%
