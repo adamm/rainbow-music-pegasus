@@ -39,10 +39,13 @@ void app_main(void)
     float* vReal = malloc(sizeof(float) * _config_total_samples);
     float* vImag = malloc(sizeof(float) * _config_total_samples);
     float* vCalib = malloc(sizeof(float) * _config_total_samples);
+    float* vDecay = malloc(sizeof(float) * _config_total_samples);
     uint8_t* colours = malloc(sizeof(uint8_t) * _config_total_samples);
+
     bzero(vReal, sizeof(float) * _config_total_samples);
     bzero(vImag, sizeof(float) * _config_total_samples);
     bzero(vCalib, sizeof(float) * _config_total_samples);
+    bzero(vDecay, sizeof(float) * _config_total_samples);
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
 
     adc_init();
@@ -98,14 +101,27 @@ void app_main(void)
             vReal[i] -= vCalib[i];
             if (vReal[i] < 0)
                 vReal[i] = 0;
-            else if (vReal[i] > 1000)
-                vReal[i] = 1000;
-            else
-                vReal[i] /= 4;
+            else if (vReal[i] > 2000)
+                vReal[i] = 2000;
+            vReal[i] /= 8;
 
-            colours[i] = (uint8_t)vReal[i];
-            //printf("%d ", colours[i]);
+            if (vReal[i] > vDecay[i])
+                vDecay[i] = vReal[i];
+            else
+                vDecay[i] -= 10;
+            if (vDecay[i] < 0)
+                vDecay[i] = 0;
+
+            colours[i] = (uint8_t)vDecay[i];
         }
+        // printf("R: ");
+        // for (int i = 0; i < 16; i++) {
+        //     printf("%0.1f ", vReal[i]);
+        // }
+        // printf("\nD: ");
+        // for (int i = 0; i < 16; i++) {
+        //     printf("%0.1f ", vDecay[i]);
+        // }
         // printf("\n");
         // ESP_LOGI(TAG, "fft");
         // dsps_view(vReal, N_SAMPLES, 64, 10, 0, 255, '-');
