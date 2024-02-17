@@ -19,6 +19,7 @@
 static const char *TAG = "leds";
 
 static uint8_t led_strip_pixels[CONFIG_MAX_LEDS * 3];
+static TaskHandle_t scanning_task = NULL;
 
 /**
  * @brief Simple helper function, converting HSV color space to RGB color space
@@ -94,6 +95,78 @@ void leds_init(void)
     ESP_ERROR_CHECK(rmt_new_led_strip_encoder(&encoder_config, &led_encoder));
 
     ESP_ERROR_CHECK(rmt_enable(led_chan));
+}
+
+
+static void leds_scanning() {
+    rmt_transmit_config_t tx_config = {
+        .loop_count = 0, // no transfer loop
+    };
+    leds_t* colours = calloc(sizeof(leds_t), _config_total_leds);
+    for (int i = 0; i < _config_total_leds; i++) {
+        colours[i].led = calloc(sizeof(led_t), 1);
+    }
+
+    for (;;) {
+        for (int leader = 0; leader < _config_total_leds+4; leader++) {
+            for (int i = 0; i < _config_total_leds; i++) {
+                bzero(colours[i].led, sizeof(led_t));
+                if (i == leader) {
+                    colours[i].led->red   = 255;
+                    colours[i].led->green = 255;
+                    colours[i].led->blue  = 255;
+                }
+                else if ((i == leader - 1) && i >= 0) {
+                    colours[i].led->red   = 128;
+                    colours[i].led->green = 128;
+                    colours[i].led->blue  = 128;
+                }
+                else if ((i == leader - 2) && i >= 0) {
+                    colours[i].led->red   = 50;
+                    colours[i].led->green = 50;
+                    colours[i].led->blue  = 50;
+                }
+                else if ((i == leader - 3) && i >= 0) {
+                    colours[i].led->red   = 10;
+                    colours[i].led->green = 10;
+                    colours[i].led->blue  = 10;
+                }
+                else {
+                    colours[i].led->red   = 0;
+                    colours[i].led->green = 0;
+                    colours[i].led->blue  = 0;
+                }
+                led_strip_pixels[i*3+0] = colours[i].led->red;
+                led_strip_pixels[i*3+1] = colours[i].led->green;
+                led_strip_pixels[i*3+2] = colours[i].led->blue;
+            }
+            // for (int j = 0; j < CONFIG_MAX_LEDS * 3; j++ ) {
+            //     printf("%d ", led_strip_pixels[j]);
+            // }
+            // printf("\n");
+            ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
+            ESP_ERROR_CHECK(rmt_tx_wait_all_done(led_chan, portMAX_DELAY));
+            vTaskDelay(pdMS_TO_TICKS(75));
+        }
+    }
+
+    for (int i = 0; i < _config_total_leds; i++) {
+        free(colours[i].led);
+    }
+    free(colours);
+
+}
+
+
+void leds_scanning_start() {
+    ESP_LOGI(TAG, "Starting scanning task");
+    xTaskCreate(leds_scanning, "scanning", 8192*3, NULL, 5, &scanning_task);
+}
+
+
+void leds_scanning_stop() {
+    ESP_LOGI(TAG, "Stopping scanning task");
+    vTaskDelete(scanning_task);
 }
 
 

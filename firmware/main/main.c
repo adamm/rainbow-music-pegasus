@@ -50,6 +50,7 @@ void app_main(void)
 
     adc_init();
     leds_init();
+    leds_scanning_start();
     fft_init(vReal, vImag, N_SAMPLES, sampling_frequency);
 
     int voltage = 0;
@@ -79,6 +80,7 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "Finished calibration...");
     dsps_view(vCalib, N_SAMPLES, 64, 10, 0, 1000, '-');
+    leds_scanning_stop();
 
     // Begin light show
     while (1) {
