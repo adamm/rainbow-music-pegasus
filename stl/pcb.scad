@@ -11,7 +11,7 @@ rgb_w = 10;
 rgb_h = 2;
 
 module microphone() {
-    translate([3.01, pcb_l-3, 0])
+    translate([8.0, pcb_l-3.7, 0])
         rotate([0,90,180])
             cylinder(13, 5, 5, false);
 }
@@ -67,7 +67,7 @@ module pcb() {
 }
 
 union() {
-    microphone();
+     microphone();
     switch();
     usb();
     pcb();
