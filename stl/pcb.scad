@@ -1,7 +1,7 @@
 $fn = 100;
 pcb_w = 138;
 pcb_l = 30.5;
-pcb_h = 1.6;
+pcb_h = 2;
 
 rgb_x = 21.85;
 rgb_y = 4.5;
@@ -41,34 +41,39 @@ module holes(x) {
     }
 }
 
-module pcb() {
-    translate([0, 0, -pcb_h/2])
+module pcb(draw_holes=true) {
+    //translate([0, 0, -pcb_h/2])
     difference() {
         linear_extrude(height=pcb_h) {
+            // Add 0.25mm to all ends to better align with
+            // 3d printer tolerance
+            offset(delta=+0.25)
             polygon(points=[[0,0], [0, 22], [3, 22], [3, pcb_l], [7, pcb_l],
             [7, pcb_l-2.5], [41, pcb_l-2.5], [41, rgb_l], [pcb_w, rgb_l],
             [pcb_w, 0]
             ]);
         }
-        led(0);
-        led(10);
-        led(20);
-        led(30);
-        led(40);
-        led(50);
-        led(60);
-        led(70);
-        led(80);
-        led(90);
-        led(100);
-        led(110);
-        holes();
+        if (draw_holes) {
+            led(0);
+            led(10);
+            led(20);
+            led(30);
+            led(40);
+            led(50);
+            led(60);
+            led(70);
+            led(80);
+            led(90);
+            led(100);
+            led(110);
+            draw_holes();
+        }
     }
 }
 
 union() {
-     microphone();
-    switch();
-    usb();
-    pcb();
+    //microphone();
+    //switch();
+    //usb();
+    //pcb();
 }
