@@ -175,10 +175,31 @@ void leds_display(uint8_t* values, int total_values) {
         .loop_count = 0, // no transfer loop
     };
 
-    for (int i = 0; (i < total_values) && (i < _config_total_leds*3/2); i++) {
-        led_strip_pixels[_config_total_leds*3/2+i] = values[i];
-        led_strip_pixels[_config_total_leds*3/2-1-i] = values[i];
-        // Flush RGB values to LEDs
+    for (int i = 0; (i < total_values) && (i < _config_total_leds*3/2); i += 3) {
+        // Right side gets the green byte first.  Left side gets the blue byte first.
+        // This results in a symmetrical brightness but asymmetrical colour when comparing
+        // right-side and left-side LEDs.
+        //
+        // "Thin" tones that span single FFT column will produce red, green, and blue.
+        // "Thick" tones that span multiple FFT column will produce yellow, cyan, magenta,
+        // "Very wide" and complex tones will produce white.
+
+        led_strip_pixels[i*2]   = values[i];    // right-side green
+        led_strip_pixels[i*2+1] = values[i+1];  // right-side red
+        led_strip_pixels[i*2+2] = values[i+2];  // right-side blue
+        led_strip_pixels[i*2+3] = values[i+1];  // left-side green
+        led_strip_pixels[i*2+4] = values[i+2];  // left-side red
+        led_strip_pixels[i*2+5] = values[i];    // left-side blue
+
+        // Right green sounds will be blue on the left.
+        // Right red sounds will be green on the left.
+        // Right blue sounds will be red on the left.
+        // Right magenta sounds will be yellow on the left.
+        // Right yellow sounds will be cyan on the left.
+        // Right cyan sounds will be magenta on the left.
+        // Right white sounds will be white on the left.
+
+        // Pretty neat!
     }
     ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
     ESP_ERROR_CHECK(rmt_tx_wait_all_done(led_chan, portMAX_DELAY));
