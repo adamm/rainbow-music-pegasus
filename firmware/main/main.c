@@ -79,7 +79,7 @@ void app_main(void)
         }
     }
     ESP_LOGI(TAG, "Finished calibration...");
-    dsps_view(vCalib, N_SAMPLES, 64, 10, 0, 1000, '-');
+    dsps_view(vCalib, N_SAMPLES, 64, 10, 0, 5000, '|');
     leds_scanning_stop();
 
     // Begin light show

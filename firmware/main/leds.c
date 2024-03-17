@@ -109,7 +109,7 @@ static void leds_scanning() {
 
     for (;;) {
         for (int leader = 0; leader < _config_total_leds+4; leader++) {
-            for (int i = 0; i < _config_total_leds; i++) {
+            for (int i = 0; i < _config_total_leds; i += 2) {
                 bzero(colours[i].led, sizeof(led_t));
                 if (i == leader) {
                     colours[i].led->red   = 255;
@@ -139,6 +139,9 @@ static void leds_scanning() {
                 led_strip_pixels[i*3+0] = colours[i].led->red;
                 led_strip_pixels[i*3+1] = colours[i].led->green;
                 led_strip_pixels[i*3+2] = colours[i].led->blue;
+                led_strip_pixels[i*3+3] = colours[i].led->red;
+                led_strip_pixels[i*3+4] = colours[i].led->green;
+                led_strip_pixels[i*3+5] = colours[i].led->blue;
             }
             // for (int j = 0; j < CONFIG_MAX_LEDS * 3; j++ ) {
             //     printf("%d ", led_strip_pixels[j]);
