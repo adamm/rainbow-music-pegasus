@@ -1,7 +1,7 @@
 $fn = 100;
 pcb_w = 138;
 pcb_l = 30.5;
-pcb_h = 2;
+pcb_h = 2.2;
 
 rgb_x = 21.85;
 rgb_y = 4.5;
@@ -11,19 +11,19 @@ rgb_w = 10;
 rgb_h = 2;
 
 module microphone() {
-    translate([8.0, pcb_l-3.7, 0])
+    translate([20.0, pcb_l-3.0, 0.8])
         rotate([0,90,180])
-            cylinder(13, 5, 5, false);
+            cylinder(27, 5.5, 5.5, false);
 }
 
 module switch() {
-    translate([-10, 10.5, pcb_h/2-0.1])
-        cube([13.4, 9, 4], false);
+    translate([-4, 10.5, pcb_h-0.1])
+        cube([13, 10.5, 5], false);
 }
 
 module usb() {
-    translate([-10, 1, 0])
-        cube([15, 8, 3], false);
+    translate([-4, 0.6, pcb_h-0.5])
+        cube([13, 8.75, 3.5], false);
 }
 
 module led(x) {
@@ -66,14 +66,15 @@ module pcb(draw_holes=true) {
             led(90);
             led(100);
             led(110);
-            draw_holes();
         }
     }
 }
 
-union() {
-    //microphone();
-    //switch();
-    //usb();
-    //pcb();
+rotate([90, 0, 90]) {
+    union() {
+        microphone();
+        switch();
+        usb();
+        pcb(true);
+    }
 }
