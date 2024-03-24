@@ -35,11 +35,14 @@ charging circuit.
 
 ![Block Diagram](assets/block-diagram.png)
 
+[View on KiCanvas](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2Fadamm%2Frainbow-music-pegasus%2Fblob%2Fmaster%2Fpcb%2Frainbow-music-pegasus.kicad_pro)
+
 ![PCB v1.1 Front](assets/pcb-front.png)
 
 ![PCB v1.1 Back](assets/pcb-back.png)
 
 ![Rendering](assets/rendering.png)
+
 
 ## Calibration
 
