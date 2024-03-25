@@ -1,9 +1,9 @@
 $fn = 100;
-pcb_w = 138;
+pcb_w = 151;
 pcb_l = 30.5;
 pcb_h = 2.2;
 
-rgb_x = 21.85;
+rgb_x = 34.8525;
 rgb_y = 4.5;
 rgb_z = 1;
 rgb_l = 9;
@@ -47,11 +47,18 @@ module pcb(draw_holes=true) {
         linear_extrude(height=pcb_h) {
             // Add 0.25mm to all ends to better align with
             // 3d printer tolerance
-            offset(delta=+0.25)
-            polygon(points=[[0,0], [0, 22], [3, 22], [3, pcb_l], [7, pcb_l],
-            [7, pcb_l-2.5], [41, pcb_l-2.5], [41, rgb_l], [pcb_w, rgb_l],
-            [pcb_w, 0]
-            ]);
+            offset(delta=+0.25) {
+                polygon(points=[[0,0], [0, 10], [3, 10], [3, 22], [6,22], [6, pcb_l], [10, pcb_l],
+                [10, pcb_l-2.5], [41.5, pcb_l-2.5], [41.5, rgb_l], [pcb_w, rgb_l],
+                [pcb_w, 0]
+                ]);
+                translate([41.5, 9, 0]) {
+                    intersection() {
+                        square(19);
+                        circle(r=19);
+                    }
+                }
+            }
         }
         if (draw_holes) {
             led(0);
@@ -72,9 +79,9 @@ module pcb(draw_holes=true) {
 
 rotate([90, 0, 90]) {
     union() {
-        microphone();
-        switch();
-        usb();
+        //microphone();
+        //switch();
+        //usb();
         pcb(true);
     }
 }
