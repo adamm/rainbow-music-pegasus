@@ -8,6 +8,7 @@
 *.kicad_pcb-bak
 *.kicad_sch-bak
 *.kicad_prl
+*.lck
 *.sch-bak
 *~
 _autosave-*
