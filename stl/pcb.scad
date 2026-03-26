@@ -1,6 +1,6 @@
 $fn = 100;
 pcb_w = 151;
-pcb_l = 30.5;
+pcb_l = 31;
 pcb_h = 2.2;
 
 rgb_x = 34.8525;
@@ -49,13 +49,13 @@ module pcb(draw_holes=true) {
             // 3d printer tolerance
             offset(delta=+0.25) {
                 polygon(points=[[0,0], [0, 10], [3, 10], [3, 22], [6,22], [6, pcb_l], [10, pcb_l],
-                [10, pcb_l-2.5], [41.5, pcb_l-2.5], [41.5, rgb_l], [pcb_w, rgb_l],
+                [41.5, pcb_l], [41.5, rgb_l], [pcb_w, rgb_l],
                 [pcb_w, 0]
                 ]);
                 translate([41.5, 9, 0]) {
                     intersection() {
-                        square(19);
-                        circle(r=19);
+                        square(22);
+                        circle(r=22);
                     }
                 }
             }

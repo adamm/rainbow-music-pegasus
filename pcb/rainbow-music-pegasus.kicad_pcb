@@ -16137,7 +16137,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "87ec4114-435b-4e77-a716-3424f1f67284")
 		)
 		(pad "49" smd rect
 			(at -1.975 4.675 90)
@@ -16147,7 +16147,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "29c859b3-33f1-47ba-a8a2-2bccf13adaa7")
 		)
 		(pad "49" smd rect
 			(at 0 0.725 90)
@@ -16157,7 +16157,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "092fae49-9d81-482a-b7c9-24f01f267b62")
 		)
 		(pad "49" smd rect
 			(at 0 2.7 90)
@@ -16167,7 +16167,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "d7c926f9-901d-46eb-be62-5de43805f33a")
 		)
 		(pad "49" smd rect
 			(at 0 4.675 90)
@@ -16177,7 +16177,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "36a64b5e-a3e9-4e6c-90ab-96e9f1630112")
 		)
 		(pad "49" smd rect
 			(at 1.975 0.725 90)
@@ -16187,7 +16187,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "91e84288-bb10-4583-be40-f5fc4e2226f7")
 		)
 		(pad "49" smd rect
 			(at 1.975 2.7 90)
@@ -16197,7 +16197,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "578b201c-bf26-4e05-8c2a-1856cda56288")
 		)
 		(pad "49" smd rect
 			(at 1.975 4.675 90)
@@ -16207,7 +16207,7 @@
 			(pinfunction "GND")
 			(pintype "passive")
 			(zone_connect 2)
-			(uuid "bab27252-1806-4f7d-9a12-38429e011c39")
+			(uuid "74113d4b-2a0c-4de7-a232-baed712ba2d3")
 		)
 		(pad "50" smd rect
 			(at 5.95 -2.25 90)
@@ -17614,7 +17614,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "8aee2395-37bd-4f24-bc7f-66c22bee507d")
 		)
 		(pad "6" thru_hole circle
 			(at -2.5 -1.4625 270)
@@ -17626,7 +17626,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "1993a70d-db28-4e75-819d-af51dc14fae9")
 		)
 		(pad "6" smd rect
 			(at -1 1.2375 270)
@@ -17635,7 +17635,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "382288e0-3edb-4f85-8f0f-508d8d20e45d")
 		)
 		(pad "6" smd rect
 			(at 1 1.2375 270)
@@ -17644,7 +17644,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "de984648-3440-46ee-a2c1-5c385e7efb66")
 		)
 		(pad "6" thru_hole circle
 			(at 2.5 -1.4625 270)
@@ -17656,7 +17656,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "fa27ccb8-ae6b-466d-8ecb-f181e0abb397")
 		)
 		(pad "6" smd rect
 			(at 2.9 1.2375 270)
@@ -17665,7 +17665,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "67d2739c-f0e5-4267-8a95-2a2f6a90fc50")
 		)
 		(pad "6" thru_hole oval
 			(at 3.5 1.2375 270)
@@ -17677,7 +17677,7 @@
 			(net 1 "GND")
 			(pinfunction "Shield")
 			(pintype "passive")
-			(uuid "252eb691-3e6b-41e2-9201-cf6e19dfd1f9")
+			(uuid "ed40e4ae-22ad-4f71-ab17-5661597631ec")
 		)
 		(embedded_fonts no)
 		(model "${KICAD9_3DMODEL_DIR}/Connector_USB.3dshapes/USB_Micro-B_Molex_47346-0001.step"
@@ -19358,7 +19358,7 @@
 			(net 3 "/Boot")
 			(pinfunction "1")
 			(pintype "passive")
-			(uuid "0c9998a9-c71f-4830-a199-e0f66221d994")
+			(uuid "94e26d15-826f-4cf9-951b-d72c9319b77e")
 		)
 		(pad "2" smd rect
 			(at -3.4 -2 125)
@@ -19376,7 +19376,7 @@
 			(net 1 "GND")
 			(pinfunction "2")
 			(pintype "passive")
-			(uuid "5baf2135-853e-4c4a-a2b6-62eb91fc7bd2")
+			(uuid "b70aa834-233d-4015-b346-6122cef1fc3e")
 		)
 		(embedded_fonts no)
 		(model "${KIPRJMOD}/3d/evqq2-bfkpuy-03w_.step"
@@ -31819,7 +31819,7 @@
 		(layer "Cmts.User")
 		(uuid "60d470e3-c88f-4b49-8529-58f7f03765fe")
 		(pts
-			(xy 86.9475 74.6) (xy 86.9475 83.1)
+			(xy 86.9475 74.1) (xy 86.9475 83.1)
 		)
 		(height 8.25)
 		(format
@@ -31839,8 +31839,8 @@
 			(extension_offset 0.5)
 			(keep_text_aligned yes)
 		)
-		(gr_text "8.5 mm"
-			(at 77.5475 78.85 90)
+		(gr_text "9 mm"
+			(at 77.5475 78.6 90)
 			(layer "Cmts.User")
 			(uuid "60d470e3-c88f-4b49-8529-58f7f03765fe")
 			(effects
@@ -32151,7 +32151,7 @@
 		(layer "Cmts.User")
 		(uuid "1c7d715f-bb27-4731-9591-1bfb13353c33")
 		(pts
-			(xy 86.9475 74.6) (xy 80.9475 105.1)
+			(xy 86.9475 74.1) (xy 80.9475 105.1)
 		)
 		(height -11)
 		(orientation 1)
@@ -32172,8 +32172,8 @@
 			(extension_offset 0.5)
 			(keep_text_aligned yes)
 		)
-		(gr_text "30.5 mm"
-			(at 74.7975 89.85 90)
+		(gr_text "31 mm"
+			(at 74.7975 89.6 90)
 			(layer "Cmts.User")
 			(uuid "1c7d715f-bb27-4731-9591-1bfb13353c33")
 			(effects
