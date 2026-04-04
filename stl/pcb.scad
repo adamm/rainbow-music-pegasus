@@ -1,7 +1,7 @@
 $fn = 100;
 pcb_w = 151;
 pcb_l = 31;
-pcb_h = 2.2;
+pcb_h = 1.6;
 
 rgb_x = 34.8525;
 rgb_y = 4.5;
@@ -82,6 +82,6 @@ rotate([90, 0, 90]) {
         //microphone();
         //switch();
         //usb();
-        pcb(true);
+        //pcb(true);
     }
 }
