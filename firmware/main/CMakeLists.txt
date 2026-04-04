@@ -1,5 +1,5 @@
 idf_component_register(SRCS
-                        "adc.c"
+                        "mic.c"
                         "config.c"
                         "fft.c"
                         "main.c"

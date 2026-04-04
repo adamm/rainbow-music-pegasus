@@ -17,7 +17,7 @@
 #include "soc/soc_caps.h"
 
 
-#include "adc.h"
+#include "mic.h"
 #include "config.h"
 #include "fft.h"
 #include "leds.h"
@@ -48,7 +48,7 @@ void app_main(void)
     bzero(vDecay, sizeof(float) * _config_total_samples);
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
 
-    adc_init();
+    mic_init();
     leds_init();
     leds_scanning_start();
     fft_init(vReal, vImag, N_SAMPLES, sampling_frequency);
@@ -62,7 +62,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting calibration...");
     while (esp_timer_get_time()-start_calib_time < 3000000) {
         for (int i = 0; i < N_SAMPLES; i++) {
-            voltage = adc_read();
+            voltage = mic_read();
             vReal[i] = (float)(voltage - 1650);
             vImag[i] = 0;
             vTaskDelay(pdMS_TO_TICKS(sampling_period_us / 1000));
@@ -85,7 +85,7 @@ void app_main(void)
     // Begin light show
     while (1) {
         for (int i = 0; i < N_SAMPLES; i++) {
-            voltage = adc_read();
+            voltage = mic_read();
             vReal[i] = (float)(voltage - 1650);
             vImag[i] = 0;
             vTaskDelay(pdMS_TO_TICKS(sampling_period_us / 1000));
@@ -131,6 +131,6 @@ void app_main(void)
         leds_display(colours, N_SAMPLES/2);
     }
 
-    adc_stop();
+    mic_stop();
 }
 
