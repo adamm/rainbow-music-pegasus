@@ -19,6 +19,10 @@
 #define CONFIG_MIN_LEDS               10
 #define CONFIG_MAX_LEDS               24
 
+#define CONFIG_GPIO_DIGIPOT_CS        18
+#define CONFIG_GPIO_DIGIPOT_MOSI      10
+#define CONFIG_GPIO_DIGIPOT_CLK       19
+
 extern uint8_t _config_total_leds;
 extern uint16_t _config_total_samples;
 
