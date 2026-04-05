@@ -17,10 +17,11 @@
 #include "soc/soc_caps.h"
 
 
-#include "mic.h"
 #include "config.h"
+#include "digipot.h"
 #include "fft.h"
 #include "leds.h"
+#include "mic.h"
 
 const static char *TAG = "main";
 
@@ -48,6 +49,7 @@ void app_main(void)
     bzero(vDecay, sizeof(float) * _config_total_samples);
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
 
+    digipot_init();
     mic_init();
     leds_init();
     leds_scanning_start();
@@ -132,5 +134,6 @@ void app_main(void)
     }
 
     mic_stop();
+    digipot_stop();
 }
 
