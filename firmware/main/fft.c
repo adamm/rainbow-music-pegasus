@@ -195,7 +195,7 @@ float fft_majorPeak() {
     uint16_t IndexOfMaxY = 0;
     // If sampling_frequency = 2 * max_frequency in signal,
     // value would be stored at position samples/2
-    for (uint16_t i = 1; i < ((_samples >> 1) + 1); i++) {
+    for (uint16_t i = 1; i < (_samples >> 1); i++) {
         if ((_vReal[i - 1] < _vReal[i]) &&
                 (_vReal[i] > _vReal[i + 1])) {
             if (_vReal[i] > maxY) {
@@ -225,7 +225,7 @@ float fft_majorPeakParabola() {
     uint16_t IndexOfMaxY = 0;
     // If sampling_frequency = 2 * max_frequency in signal,
     // value would be stored at position samples/2
-    for (uint16_t i = 1; i < ((_samples >> 1) + 1); i++) {
+    for (uint16_t i = 1; i < (_samples >> 1); i++) {
         if ((_vReal[i - 1] < _vReal[i]) &&
                 (_vReal[i] > _vReal[i + 1])) {
             if (_vReal[i] > maxY) {

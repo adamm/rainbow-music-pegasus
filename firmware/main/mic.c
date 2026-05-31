@@ -8,7 +8,7 @@
 
 const static char *TAG = "mic";
 
-bool mic_calibrated = false;
+static bool mic_calibrated = false;
 adc_oneshot_unit_handle_t mic_handle;
 adc_cali_handle_t mic_cali_channel_handle = NULL;
 
@@ -97,7 +97,11 @@ int mic_read(void) {
     ESP_ERROR_CHECK(adc_oneshot_read(mic_handle, CONFIG_MIC_CHANNEL, &adc_raw));
     // ESP_LOGI(TAG, "Read ADC Raw Data: %d", adc_raw);
 
-    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
+    if (mic_cali_channel_handle) {
+        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
+    } else {
+        voltage = (adc_raw * 3100) / 4095;
+    }
     // ESP_LOGI(TAG, "Calculate ADC Voltage: %d mV", voltage);
 
     return voltage;

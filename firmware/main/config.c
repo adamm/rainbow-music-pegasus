@@ -13,12 +13,13 @@ void config_init() {
     // Set the total number of leds configured by looking at the jumpers JP5, JP6, JP7. 
     // If they are closed they'll force the GPIO low.
     gpio_config_t io_conf = {
-        intr_type: GPIO_INTR_DISABLE,
-        mode: GPIO_MODE_INPUT,
-        pin_bit_mask: ((1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_2) |
-                       (1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_4) |
-                       (1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_8)),
-        pull_up_en: 1,
+        .intr_type    = GPIO_INTR_DISABLE,
+        .mode         = GPIO_MODE_INPUT,
+        .pin_bit_mask = ((1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_2) |
+                         (1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_4) |
+                         (1ULL<<CONFIG_GPIO_TOTAL_LEDS_ADD_8)),
+        .pull_up_en   = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
     };
     gpio_config(&io_conf);
 

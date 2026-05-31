@@ -10,6 +10,7 @@
 
 #include "esp_dsp.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -67,7 +68,7 @@ void app_main(void)
             voltage = mic_read();
             vReal[i] = (float)(voltage - 1650);
             vImag[i] = 0;
-            vTaskDelay(pdMS_TO_TICKS(sampling_period_us / 1000));
+            esp_rom_delay_us(sampling_period_us);
         }
 
         fft_dcRemoval();
@@ -90,7 +91,7 @@ void app_main(void)
             voltage = mic_read();
             vReal[i] = (float)(voltage - 1650);
             vImag[i] = 0;
-            vTaskDelay(pdMS_TO_TICKS(sampling_period_us / 1000));
+            esp_rom_delay_us(sampling_period_us);
         }
 
         // ESP_LOGI(TAG, "raw");

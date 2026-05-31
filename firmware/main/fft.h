@@ -72,7 +72,7 @@ void fft_compute(FFTDirection dir);
 void fft_dcRemoval();
 float fft_majorPeak();
 void fft_windowing(FFTWindow windowType, FFTDirection dir);
-float fft_MajorPeakParabola();
+float fft_majorPeakParabola();
 
 
 #endif

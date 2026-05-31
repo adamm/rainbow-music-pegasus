@@ -102,9 +102,9 @@ static void leds_scanning() {
     rmt_transmit_config_t tx_config = {
         .loop_count = 0, // no transfer loop
     };
-    leds_t* colours = calloc(sizeof(leds_t), _config_total_leds);
+    leds_t* colours = calloc(_config_total_leds, sizeof(leds_t));
     for (int i = 0; i < _config_total_leds; i++) {
-        colours[i].led = calloc(sizeof(led_t), 1);
+        colours[i].led = calloc(1, sizeof(led_t));
     }
 
     for (;;) {
