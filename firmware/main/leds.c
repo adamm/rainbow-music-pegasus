@@ -111,25 +111,26 @@ static void leds_scanning() {
         for (int leader = 0; leader < _config_total_leds+4; leader++) {
             for (int i = 0; i < _config_total_leds; i += 2) {
                 bzero(colours[i].led, sizeof(led_t));
+                uint8_t strength = 100;
                 if (i == leader) {
-                    colours[i].led->red   = 255;
-                    colours[i].led->green = 255;
-                    colours[i].led->blue  = 255;
+                    colours[i].led->red   = strength / 4;
+                    colours[i].led->green = strength / 4;
+                    colours[i].led->blue  = strength / 4;
                 }
                 else if ((i == leader - 1) && i >= 0) {
-                    colours[i].led->red   = 128;
-                    colours[i].led->green = 128;
-                    colours[i].led->blue  = 128;
+                    colours[i].led->red   = strength / 8;
+                    colours[i].led->green = strength / 8;
+                    colours[i].led->blue  = strength / 8;
                 }
                 else if ((i == leader - 2) && i >= 0) {
-                    colours[i].led->red   = 50;
-                    colours[i].led->green = 50;
-                    colours[i].led->blue  = 50;
+                    colours[i].led->red   = strength / 16;
+                    colours[i].led->green = strength / 16;
+                    colours[i].led->blue  = strength / 16;
                 }
                 else if ((i == leader - 3) && i >= 0) {
-                    colours[i].led->red   = 10;
-                    colours[i].led->green = 10;
-                    colours[i].led->blue  = 10;
+                    colours[i].led->red   = strength / 32;
+                    colours[i].led->green = strength / 32;
+                    colours[i].led->blue  = strength / 32;
                 }
                 else {
                     colours[i].led->red   = 0;
