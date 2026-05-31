@@ -6,7 +6,7 @@
 #include "mic.h"
 #include "config.h"
 
-const static char *TAG = "adc";
+const static char *TAG = "mic";
 
 bool mic_calibrated = false;
 adc_oneshot_unit_handle_t mic_handle;
