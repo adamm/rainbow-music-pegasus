@@ -7,11 +7,6 @@ typedef struct {
     uint8_t blue;
 } led_t;
 
-typedef struct {
-    led_t* led;
-} leds_t;
-
-
 void leds_init(void);
 void leds_scanning_start(void);
 void leds_scanning_stop(void);

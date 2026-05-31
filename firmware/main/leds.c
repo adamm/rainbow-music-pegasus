@@ -102,47 +102,44 @@ static void leds_scanning() {
     rmt_transmit_config_t tx_config = {
         .loop_count = 0, // no transfer loop
     };
-    leds_t* colours = calloc(_config_total_leds, sizeof(leds_t));
-    for (int i = 0; i < _config_total_leds; i++) {
-        colours[i].led = calloc(1, sizeof(led_t));
-    }
+    led_t colours[CONFIG_MAX_LEDS];
 
     for (;;) {
         for (int leader = 0; leader < _config_total_leds+4; leader++) {
             for (int i = 0; i < _config_total_leds; i += 2) {
-                bzero(colours[i].led, sizeof(led_t));
+                colours[i] = (led_t){0};
                 uint8_t strength = 100;
                 if (i == leader) {
-                    colours[i].led->red   = strength / 4;
-                    colours[i].led->green = strength / 4;
-                    colours[i].led->blue  = strength / 4;
+                    colours[i].red   = strength / 4;
+                    colours[i].green = strength / 4;
+                    colours[i].blue  = strength / 4;
                 }
                 else if ((i == leader - 1) && i >= 0) {
-                    colours[i].led->red   = strength / 8;
-                    colours[i].led->green = strength / 8;
-                    colours[i].led->blue  = strength / 8;
+                    colours[i].red   = strength / 8;
+                    colours[i].green = strength / 8;
+                    colours[i].blue  = strength / 8;
                 }
                 else if ((i == leader - 2) && i >= 0) {
-                    colours[i].led->red   = strength / 16;
-                    colours[i].led->green = strength / 16;
-                    colours[i].led->blue  = strength / 16;
+                    colours[i].red   = strength / 16;
+                    colours[i].green = strength / 16;
+                    colours[i].blue  = strength / 16;
                 }
                 else if ((i == leader - 3) && i >= 0) {
-                    colours[i].led->red   = strength / 32;
-                    colours[i].led->green = strength / 32;
-                    colours[i].led->blue  = strength / 32;
+                    colours[i].red   = strength / 32;
+                    colours[i].green = strength / 32;
+                    colours[i].blue  = strength / 32;
                 }
                 else {
-                    colours[i].led->red   = 0;
-                    colours[i].led->green = 0;
-                    colours[i].led->blue  = 0;
+                    colours[i].red   = 0;
+                    colours[i].green = 0;
+                    colours[i].blue  = 0;
                 }
-                led_strip_pixels[i*3+0] = colours[i].led->red;
-                led_strip_pixels[i*3+1] = colours[i].led->green;
-                led_strip_pixels[i*3+2] = colours[i].led->blue;
-                led_strip_pixels[i*3+3] = colours[i].led->red;
-                led_strip_pixels[i*3+4] = colours[i].led->green;
-                led_strip_pixels[i*3+5] = colours[i].led->blue;
+                led_strip_pixels[i*3+0] = colours[i].red;
+                led_strip_pixels[i*3+1] = colours[i].green;
+                led_strip_pixels[i*3+2] = colours[i].blue;
+                led_strip_pixels[i*3+3] = colours[i].red;
+                led_strip_pixels[i*3+4] = colours[i].green;
+                led_strip_pixels[i*3+5] = colours[i].blue;
             }
             // for (int j = 0; j < CONFIG_MAX_LEDS * 3; j++ ) {
             //     printf("%d ", led_strip_pixels[j]);
@@ -153,12 +150,6 @@ static void leds_scanning() {
             vTaskDelay(pdMS_TO_TICKS(75));
         }
     }
-
-    for (int i = 0; i < _config_total_leds; i++) {
-        free(colours[i].led);
-    }
-    free(colours);
-
 }
 
 
