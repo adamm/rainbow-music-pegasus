@@ -78,9 +78,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 1.0,
-          "height": 1.5,
-          "width": 1.5
+          "drill": 0.6,
+          "height": 1.9,
+          "width": 1.2
         },
         "silk_line_width": 0.15,
         "silk_text_italic": false,
@@ -115,7 +115,40 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "courtyards_overlap|114362240|99355000|086427be-30b2-4712-b65a-2fb82113abf9|47dd88a2-e3c8-4742-8b49-30917d7937e6",
+          ""
+        ],
+        [
+          "courtyards_overlap|124362240|99355000|1c67ea86-7a4f-411d-944a-7e838d4199a8|a145ccab-233f-4ad3-a50f-cdaf02d9fe9a",
+          ""
+        ],
+        [
+          "courtyards_overlap|126605000|91481000|4da87292-c6a0-4bde-af28-b0e07cb5ebac|fec04854-8fd6-4b23-afb6-711c76916f9d",
+          ""
+        ],
+        [
+          "courtyards_overlap|126605000|93756000|4982c088-3fa1-411b-ab4e-f451e5a0ca44|fec04854-8fd6-4b23-afb6-711c76916f9d",
+          ""
+        ],
+        [
+          "courtyards_overlap|134362240|99355000|b472e395-c113-4e5c-8cf0-31fc641574c9|e18b3220-e5d7-4131-b1f1-96e9d1e156f8",
+          ""
+        ],
+        [
+          "courtyards_overlap|144362240|99355000|9a0e73cb-1f08-4f13-a6ac-a347bfb3de54|ed3f56aa-7426-4cb1-ab19-ed0fc1e80e87",
+          ""
+        ],
+        [
+          "courtyards_overlap|89092500|94515000|1148c857-499c-4fb3-8dc8-1ee589cd9aad|11638d59-dd5e-40ce-9544-829ec2a90e48",
+          ""
+        ],
+        [
+          "silk_overlap|87887500|95975000|3ea51713-e221-45de-9ddd-eee0cf15be04|818dcd95-7170-4847-b01a-c4c7a4f6a363",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -124,7 +157,7 @@
         "clearance": "error",
         "connection_width": "warning",
         "copper_edge_clearance": "error",
-        "copper_sliver": "warning",
+        "copper_sliver": "ignore",
         "courtyards_overlap": "warning",
         "creepage": "error",
         "diff_pair_gap_out_of_range": "error",
@@ -161,7 +194,7 @@
         "pth_inside_courtyard": "ignore",
         "shorting_items": "error",
         "silk_edge_clearance": "warning",
-        "silk_over_copper": "warning",
+        "silk_over_copper": "ignore",
         "silk_overlap": "warning",
         "skew_out_of_range": "error",
         "solder_mask_bridge": "error",
@@ -849,7 +882,7 @@
         "uuid": "4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
       }
     ],
-    "used_designators": "C43",
+    "used_designators": "",
     "variants": []
   },
   "sheets": [

@@ -665,7 +665,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "USB*"
+			(property "ki_fp_filters" "USB*Micro*B*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -951,7 +951,7 @@
 							)
 						)
 					)
-					(number "6"
+					(number "SH"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -13255,7 +13255,7 @@
 			)
 		)
 		(property "Value" "2.2uF"
-			(at 115.57 154.94 0)
+			(at 115.57 155.575 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15034,84 +15034,6 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "U3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 114.3 62.23 0)
-		(mirror y)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "4ec7c33e-2cf0-4a70-b818-72e63c74f7df")
-		(property "Reference" "TP6"
-			(at 113.665 57.785 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 115.57 57.785 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_1.5x1.5mm_Drill0.7mm"
-			(at 109.22 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 109.22 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 114.3 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "066770c5-c0d1-44c0-8d97-7e73c979142c")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "TP6")
 					(unit 1)
 				)
 			)
@@ -18886,8 +18808,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "USB Micro Type B connector"
 			(at 48.895 154.305 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18911,7 +18834,7 @@
 		(pin "5"
 			(uuid "9133424f-2aca-4455-bbad-f9874a7d88f1")
 		)
-		(pin "6"
+		(pin "SH"
 			(uuid "09948299-a3bb-4d55-9ea8-e8ab7bf1117a")
 		)
 		(instances
@@ -20039,7 +19962,7 @@
 		(dnp no)
 		(uuid "9a5a81a3-7b59-4d4b-9aad-9c3d979dc60b")
 		(property "Reference" "C7"
-			(at 90.17 153.035 0)
+			(at 90.17 153.67 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -20050,7 +19973,7 @@
 			)
 		)
 		(property "Value" "1.0uF"
-			(at 90.17 154.94 0)
+			(at 90.17 155.575 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -23105,7 +23028,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Button_Switch_THT:SW_CuK_OS102011MA1QN1_SPDT_Angled"
+		(property "Footprint" "Button_Switch_THT:SW_Slide_SPDT_Angled_CK_OS102011MA1Q"
 			(at 79.375 151.765 0)
 			(hide yes)
 			(show_name no)

@@ -91,18 +91,19 @@ v1.1 has a new "Set Mode" button.  The intention is to flip between LED
 animation modes, and to do a factory reset.
 
 *Important*: Development of the button has not yet started but planned to be
-ready Spring 2027 as v1.1.1.
+ready Spring 2027 as v1.2.
 
 ## TODO
 
 - [X] Release v1 for Breyer West 2024
 - [X] Listen to music
 - [X] Interpret music signal into the light show
+- [ ] Replace USB-mini with USB-C for power
 - [ ] Implement "Set Mode" button
 - [ ] Add wifi support
 - [ ] Add bluetooth support
 - [X] Add battery support
-- [ ] Release v1.1.1 for Calgary Makerfaire 2027
+- [ ] Release v1.2 for Calgary Makerfaire 2027
 
 ## License
 
