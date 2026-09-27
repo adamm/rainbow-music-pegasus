@@ -2115,8 +2115,8 @@
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "MK"
-				(at -3.81 1.27 0)
+			(property "Reference" "MK1"
+				(at -3.81 -0.5715 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -2126,8 +2126,8 @@
 					(justify right)
 				)
 			)
-			(property "Value" "Microphone"
-				(at -3.81 -0.635 0)
+			(property "Value" "AOM-5024P-HD-MB-R"
+				(at -3.81 1.9685 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -2137,7 +2137,7 @@
 					(justify right)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 				(at 0 2.54 90)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2148,7 +2148,7 @@
 					)
 				)
 			)
-			(property "Datasheet" ""
+			(property "Datasheet" "https://puiaudio.com/file/specs-AOM-5024P-HD-MB-R.pdf"
 				(at 0 2.54 90)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2159,11 +2159,10 @@
 					)
 				)
 			)
-			(property "Description" "Microphone"
+			(property "Description" ""
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
-				(hide yes)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -12214,7 +12213,7 @@
 		(dnp no)
 		(uuid "14e1d08e-44ae-4082-93e5-4bd293938b8f")
 		(property "Reference" "MK1"
-			(at 52.07 75.5015 0)
+			(at 52.07 73.66 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -12224,8 +12223,8 @@
 				(justify right)
 			)
 		)
-		(property "Value" "Microphone"
-			(at 52.07 72.9615 0)
+		(property "Value" "AOM-5024P-HD-MB-R"
+			(at 52.07 76.2 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -12246,7 +12245,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://puiaudio.com/file/specs-AOM-5024P-HD-MB-R.pdf"
 			(at 55.88 72.39 90)
 			(hide yes)
 			(show_name no)
@@ -13174,7 +13173,7 @@
 				)
 			)
 		)
-		(property "Value" "1.5nF C0G"
+		(property "Value" "6.8nF C0G"
 			(at 86.36 40.64 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15382,7 +15381,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "2.2k"
 			(at 86.36 50.165 90)
 			(show_name no)
 			(do_not_autoplace no)

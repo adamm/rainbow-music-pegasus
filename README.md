@@ -30,9 +30,9 @@ vertices, and designed the internal mount to hold the PCB unit vertically.
 
 ## Design
 
-The PCB features an ESP32-C3 MCU, a CMA-4544PF-W electret microphone, an
-OPA344 amplifier with an MCP41050 digital potentiometer, up to 24 WS2812B RGB
-LEDs, and an MCP73831 battery charging circuit.  The full schematic is in
+The PCB features an ESP32-C3 MCU, a PUI Audio AOM-5024P-HD-MB-R electret
+microphone, an OPA2322 dual amplifier with an MCP41050 digital potentiometer,
+up to 24 WS2812B RGB LEDs, and an MCP73831 battery charging circuit.  The full schematic is in
 [schematics.pdf](schematics.pdf) and the parts list is in [bom.csv](bom.csv).
 
 ![Block Diagram](assets/block-diagram.png)
