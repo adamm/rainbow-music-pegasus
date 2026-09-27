@@ -11,7 +11,7 @@
 "C9, C10","2","220uF","C_Polarized","Capacitor_SMD:CP_Elec_5x5.9","Polarized capacitor","",""
 "C11, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23, C24, C25, C26, C27, C28, C29, C30, C31, C32, C33, C34, C35, C41, C42","27","0.1uF","C","Capacitor_SMD:C_0603_1608Metric","Unpolarized capacitor","",""
 "C36, C37","2","4.7uF","C","Capacitor_SMD:C_0805_2012Metric","Unpolarized capacitor","",""
-"C38","1","100pF","C","Capacitor_SMD:C_0805_2012Metric","Unpolarized capacitor","",""
+"C38","1","1.5nF C0G","C","Capacitor_SMD:C_0805_2012Metric","Unpolarized capacitor","",""
 "D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15, D16, D17, D18, D19, D20, D21, D22, D23, D24","24","WS2812B","WS2812B","LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm","RGB LED with integrated controller","",""
 "D25","1","CDBA540","MBR0520","Diode_SMD:D_SMA","20V 0.5A Schottky Power Rectifier Diode, SOD-123","",""
 "D26","1","RED","LED","LED_SMD:LED_0603_1608Metric","Light emitting diode","",""

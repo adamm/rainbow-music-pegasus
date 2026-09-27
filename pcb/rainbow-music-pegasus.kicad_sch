@@ -13134,7 +13134,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 86.36 44.45 90)
+		(at 86.36 44.45 270)
 		(mirror x)
 		(unit 1)
 		(body_style 1)
@@ -13145,7 +13145,7 @@
 		(dnp no)
 		(uuid "28318500-381f-4737-a84a-410ecdb7a893")
 		(property "Reference" "C38"
-			(at 86.36 50.165 90)
+			(at 86.36 38.735 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -13154,8 +13154,8 @@
 				)
 			)
 		)
-		(property "Value" "100pF"
-			(at 86.36 48.26 90)
+		(property "Value" "1.5nF C0G"
+			(at 86.36 40.64 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -13165,7 +13165,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 90.17 45.4152 0)
+			(at 82.55 43.4848 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15421,7 +15421,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 86.36 52.705 270)
+		(at 86.36 52.705 90)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -15431,7 +15431,7 @@
 		(dnp no)
 		(uuid "50acd8d8-315e-4603-8e78-ac43fd1d7a73")
 		(property "Reference" "R9"
-			(at 86.36 57.15 90)
+			(at 86.36 48.26 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15441,7 +15441,7 @@
 			)
 		)
 		(property "Value" "10k"
-			(at 86.36 55.245 90)
+			(at 86.36 50.165 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15451,7 +15451,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 86.36 50.927 90)
+			(at 86.36 54.483 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
