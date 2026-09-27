@@ -6836,6 +6836,12 @@
 		(uuid "668629a2-0d04-427b-b470-f8d70ea94dbe")
 	)
 	(junction
+		(at 273.685 161.925)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6a636df6-784d-478b-9683-3d958f1e1def")
+	)
+	(junction
 		(at 102.87 159.385)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -7086,12 +7092,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c4db96e7-6c66-4fcc-ac24-34bc026166c7")
-	)
-	(junction
-		(at 273.685 145.415)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c56b7bb1-8a2a-4bb9-a60a-2c72b11af356")
 	)
 	(junction
 		(at 303.53 222.25)
@@ -7989,6 +7989,16 @@
 	)
 	(wire
 		(pts
+			(xy 283.21 161.29) (xy 283.21 161.925)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2daa05b5-fd39-4601-816a-cd9dba2788d8")
+	)
+	(wire
+		(pts
 			(xy 360.045 226.695) (xy 360.045 227.965)
 		)
 		(stroke
@@ -8169,7 +8179,7 @@
 	)
 	(wire
 		(pts
-			(xy 273.685 153.67) (xy 276.86 153.67)
+			(xy 273.685 153.67) (xy 283.21 153.67)
 		)
 		(stroke
 			(width 0)
@@ -9729,16 +9739,6 @@
 	)
 	(wire
 		(pts
-			(xy 273.685 145.415) (xy 264.16 145.415)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "aa339ddb-e266-41c8-871d-50ca500e0aac")
-	)
-	(wire
-		(pts
 			(xy 360.045 238.125) (xy 353.695 238.125)
 		)
 		(stroke
@@ -10259,13 +10259,13 @@
 	)
 	(wire
 		(pts
-			(xy 276.86 151.13) (xy 276.86 153.67)
+			(xy 273.685 161.925) (xy 283.21 161.925)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "cf1a03b4-0b02-4ffd-a308-cf474bd87bdb")
+		(uuid "d0af978a-4827-449a-983f-f5d065fcd768")
 	)
 	(wire
 		(pts
@@ -10837,6 +10837,16 @@
 		)
 		(uuid "080d69eb-a578-404f-8ea5-65254a8e7765")
 	)
+	(label "SW_COM"
+		(at 273.685 145.415 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "0eab5c91-b541-4c54-ba9a-834fdb29b61a")
+	)
 	(label "DP_W"
 		(at 133.35 62.23 180)
 		(effects
@@ -10856,6 +10866,16 @@
 			(justify left bottom)
 		)
 		(uuid "137fdbbb-31dc-47a8-810b-66e81dfd47b9")
+	)
+	(label "SW_COM"
+		(at 84.455 151.765 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "22f2a5f0-801f-4b15-91e8-457d15a6f52f")
 	)
 	(label "Reset"
 		(at 362.585 80.01 180)
@@ -10978,7 +10998,7 @@
 		(uuid "74d325ab-cad6-4f2c-b530-446d4e6822a8")
 	)
 	(label "Batt_Level"
-		(at 276.86 153.67 0)
+		(at 283.21 153.67 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -17774,84 +17794,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 61.595 140.335 90)
-		(mirror x)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "7706a2a3-6e80-404f-92de-f3a473c9a71c")
-		(property "Reference" "TP1"
-			(at 58.42 135.89 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 57.785 137.795 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_1.5x1.5mm_Drill0.7mm"
-			(at 61.595 145.415 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 61.595 145.415 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 61.595 140.335 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "de790119-3925-4cf4-9ab2-86a4372fb83f")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "TP1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 72.39 85.725 0)
 		(unit 1)
@@ -21200,83 +21142,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 276.86 151.13 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "a9e2ccce-36b2-46bb-8d71-47a7298484ec")
-		(property "Reference" "TP5"
-			(at 278.13 146.558 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 278.13 149.098 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_1.5x1.5mm_Drill0.7mm"
-			(at 281.94 151.13 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 281.94 151.13 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 276.86 151.13 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "7e8ed16e-5e90-4dbe-ac84-bff5a1fad115")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "TP5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:C_Small")
 		(at 340.995 234.315 0)
 		(mirror x)
@@ -24257,6 +24122,84 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "C10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 283.21 157.48 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "eda9781c-17de-47b3-a25d-9502f962fd4e")
+		(property "Reference" "C40"
+			(at 288.925 156.21 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 288.925 158.115 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 284.1752 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 283.21 157.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 283.21 157.48 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1f152fe8-d7fe-4d8b-a471-e15180690492")
+		)
+		(pin "2"
+			(uuid "26c95bba-06e9-470e-9d87-5a01656beaeb")
+		)
+		(instances
+			(project "rainbow-music-pegasus"
+				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
+					(reference "C40")
 					(unit 1)
 				)
 			)
