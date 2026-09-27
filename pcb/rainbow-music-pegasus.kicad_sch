@@ -6758,6 +6758,12 @@
 		(uuid "4fa6e9ae-346c-4e3a-9742-1d1f0b4e4bda")
 	)
 	(junction
+		(at 142.24 73.025)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "51914fd0-d07a-4b5e-8ce7-76234aaff628")
+	)
+	(junction
 		(at 366.395 238.125)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6798,12 +6804,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "601b3424-1bf9-4311-b130-2b1a5b16eb1f")
-	)
-	(junction
-		(at 133.35 62.23)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "64053ce2-51bb-4ac0-87e9-4e6d5be37177")
 	)
 	(junction
 		(at 170.18 163.195)
@@ -6930,12 +6930,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "90cfd044-d152-43ce-8626-85d89272288f")
-	)
-	(junction
-		(at 114.3 62.23)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "910f33ae-8965-4e7b-99c2-c5a2eb63865a")
 	)
 	(junction
 		(at 281.305 39.37)
@@ -7959,16 +7953,6 @@
 	)
 	(wire
 		(pts
-			(xy 114.3 62.23) (xy 120.015 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2a6104eb-a415-45c1-9504-f6e3344dc4b1")
-	)
-	(wire
-		(pts
 			(xy 139.7 255.27) (xy 139.7 264.16)
 		)
 		(stroke
@@ -8729,7 +8713,7 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 62.23) (xy 142.24 63.5)
+			(xy 142.24 62.23) (xy 142.24 73.025)
 		)
 		(stroke
 			(width 0)
@@ -8966,16 +8950,6 @@
 			(type default)
 		)
 		(uuid "72d14ad4-4259-4550-8603-52968a691ef9")
-	)
-	(wire
-		(pts
-			(xy 127.635 62.23) (xy 133.35 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "72ea1b85-895a-49ae-a3d9-420cec735f59")
 	)
 	(wire
 		(pts
@@ -10059,6 +10033,16 @@
 	)
 	(wire
 		(pts
+			(xy 149.86 73.025) (xy 149.86 75.565)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bdf9d41f-fb1c-4fb6-b5a8-5561fb63ad75")
+	)
+	(wire
+		(pts
 			(xy 85.09 60.325) (xy 85.09 62.865)
 		)
 		(stroke
@@ -10116,16 +10100,6 @@
 			(type default)
 		)
 		(uuid "c15dda70-66ef-43af-8324-63278cb001c1")
-	)
-	(wire
-		(pts
-			(xy 142.24 73.025) (xy 142.24 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c2abdd78-30ff-4375-8378-668b734fe540")
 	)
 	(wire
 		(pts
@@ -11877,6 +11851,84 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "D25")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 149.86 75.565 0)
+		(mirror y)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "077f5737-adf2-436a-9e41-22b094cf5c08")
+		(property "Reference" "#PWR061"
+			(at 149.86 81.915 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 149.86 80.01 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 149.86 75.565 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 149.86 75.565 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 149.86 75.565 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a658e295-fd0f-4e6b-a0d4-9836efb40c75")
+		)
+		(instances
+			(project "rainbow-music-pegasus"
+				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
+					(reference "#PWR061")
 					(unit 1)
 				)
 			)
@@ -14317,7 +14369,7 @@
 				)
 			)
 		)
-		(property "Value" "470"
+		(property "Value" "2.2k"
 			(at 100.965 67.945 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14327,7 +14379,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 100.965 72.263 90)
 			(hide yes)
 			(show_name no)
@@ -18134,7 +18186,7 @@
 				)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "330"
 			(at 137.16 70.485 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18918,84 +18970,6 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "J1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 123.825 62.23 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "85f51abb-30c6-4af8-ab23-c93d9afe0a7d")
-		(property "Reference" "C40"
-			(at 123.825 56.515 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "4.7uF"
-			(at 123.825 58.42 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 127.635 61.2648 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 123.825 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 123.825 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "25e2ff59-f235-440a-9324-26835d3d73a9")
-		)
-		(pin "2"
-			(uuid "60cc59fb-b00f-40b0-9cbd-72b713b4f11b")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "C40")
 					(unit 1)
 				)
 			)
@@ -24610,7 +24584,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 142.24 67.31 0)
+		(at 146.05 73.025 90)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -24620,7 +24594,7 @@
 		(dnp no)
 		(uuid "f614c09b-736f-4566-9914-8a4e5ccdbcea")
 		(property "Reference" "C41"
-			(at 147.955 66.04 0)
+			(at 146.05 67.31 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -24629,8 +24603,8 @@
 				)
 			)
 		)
-		(property "Value" "2.2uF"
-			(at 147.955 68.58 0)
+		(property "Value" "0.1uF"
+			(at 146.05 69.215 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -24639,8 +24613,8 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 143.2052 71.12 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 149.86 72.0598 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24651,7 +24625,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 142.24 67.31 0)
+			(at 146.05 73.025 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24661,8 +24635,8 @@
 				)
 			)
 		)
-		(property "Description" ""
-			(at 142.24 67.31 0)
+		(property "Description" "Place C41 by GPIO4"
+			(at 146.05 83.185 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
