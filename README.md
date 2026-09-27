@@ -77,15 +77,13 @@ idf.py -p <PORT> flash monitor
 See [firmware/README.md](firmware/README.md) for the pin map, the LED-count
 jumpers and how the audio pipeline works.
 
-## Calibration
+## Mic sensitivity
 
-In order to isolate music from background ambient noise, a calibration
-process needs to run at startup.  For 3 seconds after power-on, the wings
-will appear to "flap" in white.  Once complete, start the music.
-
-*Important*: If you're playing music during calibration, the music will be
-ignored by the light display.  Pause your music and cycle the power, then
-start the music when 3-second calibration is completed.
+The microphone's sensitivity adjusts automatically.  If the sound is too quiet
+it is turned up, and if it is so loud the signal clips it is turned down.  For
+3 seconds after power-on, the wings will appear to "flap" in white while the
+sensitivity settles to the room.  When the device is moved between quiet and
+loud environments, it takes a few seconds to catch up.
 
 ## Set Mode
 

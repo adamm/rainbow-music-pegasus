@@ -2,15 +2,45 @@
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #include "mic.h"
 #include "config.h"
+#include "digipot.h"
 
 const static char *TAG = "mic";
+
+// A frame is clipping if any sample gets this close to the ADC rails.  With
+// 12 dB attenuation the ESP32-C3 ADC is only specified up to ~2500 mV, so the
+// positive half-wave clips first.
+#define MIC_CLIP_LOW_MV         100
+#define MIC_CLIP_HIGH_MV        2400
+// A frame is too quiet if its peak-to-peak is buried in the ADC noise.
+#define MIC_QUIET_P2P_MV        50
+// How long a frame condition must persist before stepping the sensitivity.
+// Measured in time, not frames, since the frame length depends on the FFT size.
+#define MIC_LOUD_HOLD_US        50000
+#define MIC_QUIET_HOLD_US       200000
+
+// Sensitivity is the digipot wiper code.  The digipot's B-W resistance is the
+// feedback resistor of U2B, so the preamp gain scales linearly with it.
+// Code 00h puts the wiper at terminal B, so a higher code means higher gain.
+#define MIC_SENSITIVITY_INIT    128  // same as the MCP41050 power-on wiper
+#define MIC_SENSITIVITY_MAX     255
 
 static bool mic_calibrated = false;
 adc_oneshot_unit_handle_t mic_handle;
 adc_cali_handle_t mic_cali_channel_handle = NULL;
+static int mic_sensitivity = 0;
+
+
+static void mic_sensitivity_set(int sensitivity) {
+    if (sensitivity < 0)                   sensitivity = 0;
+    if (sensitivity > MIC_SENSITIVITY_MAX) sensitivity = MIC_SENSITIVITY_MAX;
+
+    mic_sensitivity = sensitivity;
+    digipot_set_value(sensitivity);
+}
 
 
 bool mic_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle)
@@ -87,6 +117,9 @@ void mic_init(void) {
     ESP_ERROR_CHECK(adc_oneshot_config_channel(mic_handle, CONFIG_MIC_CHANNEL, &adc_channel_config));
 
     mic_calibration_init(CONFIG_MIC_UNIT, CONFIG_MIC_CHANNEL, CONFIG_MIC_ATTEN, &mic_cali_channel_handle);
+
+    // Requires digipot_init() to have been called first.
+    mic_sensitivity_set(MIC_SENSITIVITY_INIT);
 }
 
 
@@ -105,6 +138,46 @@ int mic_read(void) {
     // ESP_LOGI(TAG, "Calculate ADC Voltage: %d mV", voltage);
 
     return voltage;
+}
+
+
+// Called once per frame with the lowest and highest voltage read in it.
+// Progressively lowers the preamp gain while frames keep clipping, and raises
+// it while frames stay too quiet to be useful.  Clipping is stepped down faster
+// (~2.5 dB) than quiet is stepped up (~1 dB).  Steps are proportional to the
+// current sensitivity so each one is roughly the same number of dB.
+void mic_sensitivity_update(int min_mv, int max_mv) {
+    static int64_t loud_since = 0;
+    static int64_t quiet_since = 0;
+    int64_t now = esp_timer_get_time();
+    bool loud = (min_mv <= MIC_CLIP_LOW_MV || max_mv >= MIC_CLIP_HIGH_MV);
+    bool quiet = (max_mv - min_mv < MIC_QUIET_P2P_MV);
+    int old = mic_sensitivity;
+
+    if (!loud)
+        loud_since = 0;
+    else if (loud_since == 0)
+        loud_since = now;
+
+    if (!quiet)
+        quiet_since = 0;
+    else if (quiet_since == 0)
+        quiet_since = now;
+
+    if (loud_since && now - loud_since >= MIC_LOUD_HOLD_US) {
+        int step = mic_sensitivity / 4;
+        mic_sensitivity_set(mic_sensitivity - (step > 1 ? step : 1));
+        loud_since = now;
+        if (mic_sensitivity != old)
+            ESP_LOGI(TAG, "too loud, sensitivity %d -> %d", old, mic_sensitivity);
+    }
+    else if (quiet_since && now - quiet_since >= MIC_QUIET_HOLD_US) {
+        int step = mic_sensitivity / 8;
+        mic_sensitivity_set(mic_sensitivity + (step > 1 ? step : 1));
+        quiet_since = now;
+        if (mic_sensitivity != old)
+            ESP_LOGI(TAG, "too quiet, sensitivity %d -> %d", old, mic_sensitivity);
+    }
 }
 
 
