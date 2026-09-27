@@ -7314,10 +7314,6 @@
 		(uuid "94a01791-a15d-486c-aa7f-7b26379d153a")
 	)
 	(no_connect
-		(at 268.605 57.15)
-		(uuid "aa878935-ced7-4dc8-8239-0afc3cac82ed")
-	)
-	(no_connect
 		(at 261.62 262.89)
 		(uuid "c5824333-2105-4681-80f5-48172320bed0")
 	)
@@ -10881,6 +10877,16 @@
 		)
 		(uuid "31ea1d0b-dbbc-402a-b1e1-1ff5787c896a")
 	)
+	(label "Button"
+		(at 368.3 80.01 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "329ee8d1-adef-4d15-9d70-a70d17f4c01d")
+	)
 	(label "Batt_Level"
 		(at 268.605 54.61 180)
 		(effects
@@ -10921,16 +10927,6 @@
 		)
 		(uuid "525a6826-679f-4492-bfe0-f77fe7295b4a")
 	)
-	(label "Boot"
-		(at 368.3 80.01 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "59e9d664-150d-4cd6-8cd9-9c546a892722")
-	)
 	(label "RGB_Data"
 		(at 52.07 222.885 180)
 		(effects
@@ -10950,6 +10946,16 @@
 			(justify left bottom)
 		)
 		(uuid "686107ee-cbca-46b1-b8c3-6ad91ef9954f")
+	)
+	(label "Button"
+		(at 268.605 57.15 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6c818cf8-d1b8-4b7e-81fd-74c3d6bad08f")
 	)
 	(label "RXD"
 		(at 375.92 40.64 0)

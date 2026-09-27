@@ -60,12 +60,13 @@ All pins are defined in [`main/config.h`](main/config.h).
 
 | Function                    | GPIO |
 |-----------------------------|------|
-| Microphone (ADC1 channel 4) | 4    |
+| Button                      | 1    |
 | WS2812B data                | 3    |
-| Digipot CS                  | 18   |
-| Digipot MOSI                | 10   |
-| Digipot CLK                 | 19   |
+| Microphone (ADC1 channel 4) | 4    |
 | LED-count jumpers           | 5, 6, 7 |
+| Digipot MOSI                | 10   |
+| Digipot CS                  | 18   |
+| Digipot CLK                 | 19   |
 
 ## Source layout
 
