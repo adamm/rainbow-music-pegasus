@@ -1,7 +1,7 @@
 # Rainbow Music Pegasus
 
 Disclaimer: This work is a *work-in-progress*.  This project is still under
-active development and is estimated to be completed _Spring 2026_.
+active development and is estimated to be completed _Spring 2027_.
 What you see here is code that is largely incomplete, buggy, probably crashes,
 and could catch fire. The PCB board is largely inefficient, expensive,
 probably broken, and could catch fire.
@@ -14,7 +14,7 @@ v1 lacks wifi, bluetooth, and battery support.
 
 Version 1.1 is under active development, after adding on a battery and
 charger module, battery status lights, and adjusting the position of the
-LEDs.  It is estimated to be completed Spring 2026.
+LEDs.  It is estimated to be completed Spring 2027.
 
 ## Description
 
@@ -87,11 +87,11 @@ loud environments, it takes a few seconds to catch up.
 
 ## Set Mode
 
-v1.1 has a new "Set Mode" button.  The intention is to flip between
-Music-listen and wifi or bluetooth mode.
+v1.1 has a new "Set Mode" button.  The intention is to flip between LED
+animation modes, and to do a factory reset.
 
-*Important*: Development of the button has not yet started but plans to be
-ready Spring 2026.
+*Important*: Development of the button has not yet started but planned to be
+ready Spring 2027 as v1.1.1.
 
 ## TODO
 
@@ -102,7 +102,7 @@ ready Spring 2026.
 - [ ] Add wifi support
 - [ ] Add bluetooth support
 - [X] Add battery support
-- [ ] Release v1.1 for Calgary Makerfaire 2026
+- [ ] Release v1.1.1 for Calgary Makerfaire 2027
 
 ## License
 
