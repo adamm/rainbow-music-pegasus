@@ -21,7 +21,7 @@ LEDs.  It is estimated to be completed Spring 2026.
 Rainbow Music Pegasus is a combination 3D printed horse coupled with a PCB
 with 10 or more RGB lights, microphone, and a MCU.  A
 [Fast Fourier transform](https://en.wikipedia.org/wiki/Fast_Fourier_transform)
-algorithm tanslates an audio signal from the microphone, which is displayed
+algorithm translates an audio signal from the microphone, which is displayed
 as a flashing colour light display as the horse's wings.
 
 The original design from the horse is from Stlflix, but its internals were
@@ -30,8 +30,10 @@ vertices, and designed the internal mount to hold the PCB unit vertically.
 
 ## Design
 
-The PCB features an ESP32-C3 MCU, an OPA344 amplifier, and MCP73831 battery
-charging circuit.
+The PCB features an ESP32-C3 MCU, a CMA-4544PF-W electret microphone, an
+OPA344 amplifier with an MCP41050 digital potentiometer, up to 24 WS2812B RGB
+LEDs, and an MCP73831 battery charging circuit.  The full schematic is in
+[schematics.pdf](schematics.pdf) and the parts list is in [bom.csv](bom.csv).
 
 ![Block Diagram](assets/block-diagram.png)
 
@@ -44,11 +46,42 @@ charging circuit.
 ![Rendering](assets/rendering.png)
 
 
+## Repository layout
+
+| Path                 | Contents |
+|----------------------|----------|
+| [firmware/](firmware/) | ESP-IDF firmware for the ESP32-C3 (see its [README](firmware/README.md)) |
+| [pcb/](pcb/)           | KiCad project, 3D models and gerbers |
+| [stl/](stl/)           | Pegasus model (Blender, STL, 3MF), PCB model and SMT stencil mount (OpenSCAD) |
+| [assets/](assets/)     | Images used in this README |
+| [schematics.pdf](schematics.pdf) | Exported schematic |
+| [bom.csv](bom.csv)     | Bill of materials |
+
+Clone with submodules to get the Espressif KiCad libraries:
+
+```sh
+git clone --recurse-submodules https://github.com/adamm/rainbow-music-pegasus.git
+```
+
+## Building the firmware
+
+The firmware uses ESP-IDF v5.x:
+
+```sh
+cd firmware
+idf.py set-target esp32c3
+idf.py build
+idf.py -p <PORT> flash monitor
+```
+
+See [firmware/README.md](firmware/README.md) for the pin map, the LED-count
+jumpers and how the audio pipeline works.
+
 ## Calibration
 
 In order to isolate music from background ambient noise, a calibration
 process needs to run at startup.  For 3 seconds after power-on, the wings
-will appear to "flap" in white.  Once complete, start the music 
+will appear to "flap" in white.  Once complete, start the music.
 
 *Important*: If you're playing music during calibration, the music will be
 ignored by the light display.  Pause your music and cycle the power, then
@@ -73,4 +106,7 @@ ready Spring 2026.
 - [X] Add battery support
 - [ ] Release v1.1 for Calgary Makerfaire 2026
 
+## License
 
+See [LICENSE.md](LICENSE.md) (Apache 2.0).  `firmware/main/fft.c` is a port of
+arduinoFFT and is licensed under GPL-3.0.
