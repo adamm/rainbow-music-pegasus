@@ -45,6 +45,13 @@ up to 24 WS2812B RGB LEDs, and an MCP73831 battery charging circuit.  The full s
 
 ![Rendering](assets/rendering.png)
 
+## Battery
+
+Use a single-cell (3.7V nominal) LiPo of 400mAh or larger, connected to the
+JST PH connector J3.  The MCP73831 charges at a fixed 200mA (set by R10 and
+R11), which keeps the charge rate at or below 0.5C for a 400mAh cell.  Larger
+batteries are fine but take longer to charge: roughly 4 hours for 800mAh and
+10 hours for 2000mAh.
 
 ## Repository layout
 
