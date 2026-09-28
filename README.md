@@ -33,7 +33,7 @@ vertices, and designed the internal mount to hold the PCB unit vertically.
 The PCB features an ESP32-C3 MCU, a PUI Audio AOM-5024P-HD-MB-R electret
 microphone, an OPA2322 dual amplifier with an MCP41050 digital potentiometer,
 up to 24 WS2812B RGB LEDs, and an MCP73831 battery charging circuit.  The full schematic is in
-[schematics.pdf](schematics.pdf) and the parts list is in [bom.csv](bom.csv).
+[schematic.pdf](schematic.pdf) and the parts list is in [bom.csv](bom.csv).
 
 ![Block Diagram](assets/block-diagram.png)
 
@@ -54,7 +54,7 @@ up to 24 WS2812B RGB LEDs, and an MCP73831 battery charging circuit.  The full s
 | [pcb/](pcb/)           | KiCad project, 3D models and gerbers |
 | [stl/](stl/)           | Pegasus model (Blender, STL, 3MF), PCB model and SMT stencil mount (OpenSCAD) |
 | [assets/](assets/)     | Images used in this README |
-| [schematics.pdf](schematics.pdf) | Exported schematic |
+| [schematic.pdf](schematic.pdf) | Exported schematic |
 | [bom.csv](bom.csv)     | Bill of materials |
 
 Clone with submodules to get the Espressif KiCad libraries:
