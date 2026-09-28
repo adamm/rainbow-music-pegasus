@@ -1915,196 +1915,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:LED"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "D"
-				(at 0 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "LED"
-				(at 0 -2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Light emitting diode"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "LED diode"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "LED_0_1"
-				(polyline
-					(pts
-						(xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 0) (xy 1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -1.27) (xy -1.27 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "LED_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Device:Microphone"
 			(pin_names
 				(offset 0.0254)
@@ -3852,6 +3662,318 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "LED:LTST-C235KGKRKT"
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "D26"
+				(at 0 11.43 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "LTST-C195KGJRKT"
+				(at 0 8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "Altivo:LTST-C195KGJRKT"
+				(at 0.762 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0.762 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "LED dual red/green, 4-pin, down-facing"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "diode bicolor down-facing reverse"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "*LTST*C235K*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "LTST-C235KGKRKT_0_0"
+				(text "R"
+					(at -2.54 1.27 0)
+					(effects
+						(font
+							(size 1.2954 1.2954)
+						)
+					)
+				)
+				(text "G"
+					(at -2.54 -1.27 0)
+					(effects
+						(font
+							(size 1.2954 1.2954)
+						)
+					)
+				)
+			)
+			(symbol "LTST-C235KGKRKT_0_1"
+				(polyline
+					(pts
+						(xy -5.08 2.54) (xy 2.032 2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 -2.54) (xy 2.032 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 3.81) (xy -1.27 1.27) (xy 1.27 2.54) (xy -1.27 3.81)
+					)
+					(stroke
+						(width 0.2032)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -1.27) (xy -1.27 -3.81) (xy 1.27 -2.54) (xy -1.27 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0 0)
+					(radius 5.08)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 5.08) (xy 2.794 6.604) (xy 2.032 6.604) (xy 2.794 6.604) (xy 2.794 5.842)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 3.81) (xy 1.27 1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 -1.27) (xy 1.27 -3.81)
+					)
+					(stroke
+						(width 0.2032)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 3.81) (xy 4.064 5.334) (xy 3.302 5.334) (xy 4.064 5.334) (xy 4.064 4.572)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.08 2.54) (xy 1.905 2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.08 -2.54) (xy 1.905 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "LTST-C235KGKRKT_1_1"
+				(pin input line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name "A2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "A1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name "K2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name "K1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -9598,16 +9720,6 @@
 	)
 	(wire
 		(pts
-			(xy 220.345 149.225) (xy 218.44 149.225)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9f31bc2a-998e-492f-b51d-2bc53f9576b2")
-	)
-	(wire
-		(pts
 			(xy 368.3 80.01) (xy 368.3 81.28)
 		)
 		(stroke
@@ -9675,6 +9787,16 @@
 			(type default)
 		)
 		(uuid "a599efd6-ff35-4d45-9bfe-ee055ff555db")
+	)
+	(wire
+		(pts
+			(xy 210.82 154.305) (xy 210.82 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a6331c26-41f8-4c97-99cf-ab3709644e38")
 	)
 	(wire
 		(pts
@@ -10088,13 +10210,13 @@
 	)
 	(wire
 		(pts
-			(xy 218.44 161.925) (xy 220.345 161.925)
+			(xy 226.06 149.225) (xy 228.6 149.225)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "c15dda70-66ef-43af-8324-63278cb001c1")
+		(uuid "c206f6a7-5a92-41f3-9485-0e1f2da47449")
 	)
 	(wire
 		(pts
@@ -10175,6 +10297,16 @@
 			(type default)
 		)
 		(uuid "c919bb53-0c4a-43fc-b40e-0e4071a3e616")
+	)
+	(wire
+		(pts
+			(xy 226.06 161.925) (xy 226.06 154.305)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cb27502c-1661-4517-bacf-1afbbc4849ee")
 	)
 	(wire
 		(pts
@@ -10548,7 +10680,7 @@
 	)
 	(wire
 		(pts
-			(xy 208.915 161.925) (xy 210.82 161.925)
+			(xy 208.915 161.925) (xy 226.06 161.925)
 		)
 		(stroke
 			(width 0)
@@ -11567,8 +11699,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 220.345 161.925 90)
-		(mirror x)
+		(at 210.82 156.21 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -11576,10 +11707,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "058391b9-3e17-4f40-9c43-01d31e6d4f5c")
 		(property "Reference" "#PWR056"
-			(at 226.695 161.925 0)
+			(at 210.82 162.56 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11590,17 +11720,18 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 224.79 161.925 0)
+			(at 208.915 157.4799 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Footprint" ""
-			(at 220.345 161.925 0)
+			(at 210.82 156.21 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11611,7 +11742,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 220.345 161.925 0)
+			(at 210.82 156.21 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11622,7 +11753,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 220.345 161.925 0)
+			(at 210.82 156.21 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -12276,84 +12407,6 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "MK1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 133.35 62.23 0)
-		(mirror y)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "162145d3-c872-44c0-a829-0be7c145e661")
-		(property "Reference" "TP7"
-			(at 132.715 57.785 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 134.62 57.785 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_1.5x1.5mm_Drill0.7mm"
-			(at 128.27 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 128.27 62.23 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 133.35 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "4756e73e-b21b-4d9e-be59-2a53f497472a")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "TP7")
 					(unit 1)
 				)
 			)
@@ -15607,7 +15660,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "54d3aea3-0726-446f-92ce-a26f19f11221")
-		(property "Reference" "TP8"
+		(property "Reference" "TP1"
 			(at 141.605 57.785 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15667,7 +15720,7 @@
 		(instances
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "TP8")
+					(reference "TP1")
 					(unit 1)
 				)
 			)
@@ -19875,7 +19928,7 @@
 	)
 	(symbol
 		(lib_id "power:VBUS")
-		(at 220.345 149.225 270)
+		(at 228.6 149.225 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -19885,7 +19938,7 @@
 		(dnp no)
 		(uuid "99ee7862-738a-4214-a35d-cfcf3417d715")
 		(property "Reference" "#PWR059"
-			(at 216.535 149.225 0)
+			(at 224.79 149.225 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19896,7 +19949,7 @@
 			)
 		)
 		(property "Value" "VBUS"
-			(at 224.79 149.225 0)
+			(at 233.045 149.225 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19906,7 +19959,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 220.345 149.225 0)
+			(at 228.6 149.225 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19917,7 +19970,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 220.345 149.225 0)
+			(at 228.6 149.225 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19928,7 +19981,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 220.345 149.225 0)
+			(at 228.6 149.225 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -20591,84 +20644,6 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "D12")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED")
-		(at 214.63 149.225 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "a480d4a8-6bd8-4f93-aae9-6c1cdc7c02c8")
-		(property "Reference" "D26"
-			(at 214.63 143.51 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RED"
-			(at 214.63 146.05 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
-			(at 214.63 149.225 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 214.63 149.225 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 214.63 149.225 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "800ee2ac-ce88-4975-bf99-d60b9416087f")
-		)
-		(pin "2"
-			(uuid "3b4a7971-e44e-44f6-a3cd-88324492d07e")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "D26")
 					(unit 1)
 				)
 			)
@@ -22676,85 +22651,6 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "C1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED")
-		(at 214.63 161.925 0)
-		(mirror y)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "cc65b8cc-611e-444c-b419-2ab67bc4352a")
-		(property "Reference" "D27"
-			(at 214.63 167.64 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GREEN"
-			(at 214.63 165.735 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
-			(at 214.63 161.925 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 214.63 161.925 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 214.63 161.925 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "c229e92c-49ca-436a-ac64-de516584b6a3")
-		)
-		(pin "2"
-			(uuid "36b6a4a0-3916-4a03-94d9-0c44ddeb2dab")
-		)
-		(instances
-			(project "rainbow-music-pegasus"
-				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
-					(reference "D27")
 					(unit 1)
 				)
 			)
@@ -24960,6 +24856,92 @@
 			(project "rainbow-music-pegasus"
 				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
 					(reference "C35")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "LED:LTST-C235KGKRKT")
+		(at 218.44 151.765 0)
+		(mirror y)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "fb133a6a-2d3e-46d2-8530-6a82e58d0a99")
+		(property "Reference" "D26"
+			(at 218.44 140.335 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "LTST-C195KGJRKT"
+			(at 218.44 142.875 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Altivo:LTST-C195KGJRKT"
+			(at 217.678 151.765 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 217.678 151.765 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "LED dual red/green, 4-pin"
+			(at 218.44 151.765 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "4"
+			(uuid "1aae64ff-1913-4bcb-91cc-8e0d13b712cd")
+		)
+		(pin "1"
+			(uuid "7cda423d-ca23-4dbc-875a-9e9c39c6860b")
+		)
+		(pin "2"
+			(uuid "52d4da7e-f1b5-4447-878c-c73ec7d92383")
+		)
+		(pin "3"
+			(uuid "d24f8fab-9e55-406b-bf9b-796a6d386848")
+		)
+		(instances
+			(project "rainbow-music-pegasus"
+				(path "/4cbaa20b-39f5-487e-a5d4-6b04539cf52b"
+					(reference "D26")
 					(unit 1)
 				)
 			)
