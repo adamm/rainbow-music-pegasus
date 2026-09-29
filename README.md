@@ -6,16 +6,6 @@ What you see here is code that is largely incomplete, buggy, probably crashes,
 and could catch fire. The PCB board is largely inefficient, expensive,
 probably broken, and could catch fire.
 
-## History
-
-Version 1 of the rainbow-music-pegasus was completed March 2024.  A few
-test units were sold at Breyer West show, but were never mass produced.
-v1 lacks wifi, bluetooth, and battery support.
-
-Version 1.1 is under active development, after adding on a battery and
-charger module, battery status lights, and adjusting the position of the
-LEDs.  It is estimated to be completed Spring 2027.
-
 ## Description
 
 Rainbow Music Pegasus is a combination 3D printed horse coupled with a PCB
@@ -44,6 +34,19 @@ up to 24 WS2812B RGB LEDs, and an MCP73831 battery charging circuit.  The full s
 ![PCB v1.1 Back](assets/pcb-back.png)
 
 ![Rendering](assets/rendering.png)
+
+## History
+
+Version 1.0 of the rainbow-music-pegasus was completed March 2024.  A few
+test units were sold at Breyer West show, but were never mass produced.
+This version lacks wifi, bluetooth, and battery support.
+
+Version 1.1 added a battery and charging module, battery status lights, and adjusting the position of the LEDs.
+
+Version 1.2 is under active development. It will clean up the amp's stage-1
+and digipot controlled stage-2, make use of the set-mode button, use USB-C
+to charge, and other bug fixes. It is estimated to be completed Spring
+2027.
 
 ## Battery
 
@@ -105,7 +108,7 @@ ready Spring 2027 as v1.2.
 - [X] Release v1 for Breyer West 2024
 - [X] Listen to music
 - [X] Interpret music signal into the light show
-- [ ] Replace USB-mini with USB-C for power
+- [X] Replace USB-mini with USB-C for power
 - [ ] Implement "Set Mode" button
 - [ ] Add wifi support
 - [ ] Add bluetooth support
