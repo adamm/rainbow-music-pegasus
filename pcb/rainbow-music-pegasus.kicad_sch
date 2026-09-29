@@ -19937,7 +19937,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "B2B-PH-K-S"
+		(property "Value" "S2B-PH-K-S"
 			(at 260.985 154.94 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19948,7 +19948,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal"
 			(at 264.16 153.416 90)
 			(hide yes)
 			(show_name no)

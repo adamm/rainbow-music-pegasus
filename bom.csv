@@ -10,7 +10,7 @@
 "D25","CDBA540","Diode_SMD:D_SMA","","1"
 "D26","LTST-C195KGJRKT","Altivo:LTST-C195KGJRKT","LED dual red/green, 4-pin","1"
 "J1","USB4125-GF-A-0190","Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-17","USB Power-Only 6P Type-C Receptacle connector","1"
-"J3","B2B-PH-K-S","Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical","","1"
+"J3","S2B-PH-K-S","Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal","","1"
 "MK1","AOM-5024P-HD-MB-R","Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical","","1"
 "Q1","DMG3415U","Package_TO_SOT_SMD:SOT-23","","1"
 "R1-R6, R10, R11","10k","Resistor_SMD:R_0805_2012Metric","","8"
