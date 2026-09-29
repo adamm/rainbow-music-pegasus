@@ -16,7 +16,7 @@ zip: ${GERBER_ZIP}
 .PHONY: all gerbers zip
 
 ${BOM_CSV}: ${PROJECT}.kicad_sch
-	kicad-cli sch export bom $^ -o $@ --group-by Value --fields "Reference,Value,Footprint,Description,Quantity" --ref-delimiter ", "
+	kicad-cli sch export bom $^ -o $@ --group-by Value,Footprint --fields "Reference,Value,Footprint,Description,Quantity" --ref-delimiter ", "
 
 ${SCH_PDF}: ${PROJECT}.kicad_sch
 	kicad-cli sch export pdf $^ -o $@
