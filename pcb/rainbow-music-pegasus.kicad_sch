@@ -22836,7 +22836,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-17"
+		(property "Footprint" "Altivo:USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal"
 			(at 53.34 146.05 0)
 			(hide yes)
 			(show_name no)
