@@ -11,7 +11,6 @@
 
 #include "esp_dsp.h"
 #include "esp_log.h"
-#include "esp_rom_sys.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -34,28 +33,26 @@ const static char *TAG = "main";
 // Subtracted from every FFT bin so amp and ADC hiss doesn't flicker the LEDs.
 #define FFT_NOISE_FLOOR 100
 
-double sampling_frequency = 10000; // HZ
-unsigned int sampling_period_us = 100; // (1000000 * (1.0 / sampling_frequency)
+double sampling_frequency = CONFIG_MIC_SAMPLE_FREQ_HZ;
 float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
 
 
 // Sample one frame from the mic, then let the mic adjust its sensitivity based
 // on how loud the frame was.
-static void read_frame(float* vReal, float* vImag)
+static void read_frame(int* voltages, float* vReal, float* vImag)
 {
-    int voltage = 0;
     int min = INT_MAX;
     int max = INT_MIN;
 
+    mic_read_frame(voltages, N_SAMPLES);
+
     for (int i = 0; i < N_SAMPLES; i++) {
-        voltage = mic_read();
-        if (voltage < min)
-            min = voltage;
-        if (voltage > max)
-            max = voltage;
-        vReal[i] = (float)(voltage - 1650);
+        if (voltages[i] < min)
+            min = voltages[i];
+        if (voltages[i] > max)
+            max = voltages[i];
+        vReal[i] = (float)(voltages[i] - 1650);
         vImag[i] = 0;
-        esp_rom_delay_us(sampling_period_us);
     }
 
     mic_sensitivity_update(min, max);
@@ -65,11 +62,13 @@ static void read_frame(float* vReal, float* vImag)
 void app_main(void)
 {
     config_init();
+    int* voltages = malloc(sizeof(int) * _config_total_samples);
     float* vReal = malloc(sizeof(float) * _config_total_samples);
     float* vImag = malloc(sizeof(float) * _config_total_samples);
     float* vDecay = malloc(sizeof(float) * _config_total_samples);
     uint8_t* colours = malloc(sizeof(uint8_t) * _config_total_samples);
 
+    bzero(voltages, sizeof(int) * _config_total_samples);
     bzero(vReal, sizeof(float) * _config_total_samples);
     bzero(vImag, sizeof(float) * _config_total_samples);
     bzero(vDecay, sizeof(float) * _config_total_samples);
@@ -87,14 +86,14 @@ void app_main(void)
     // the light show starts.
     ESP_LOGI(TAG, "Settling mic sensitivity...");
     while (esp_timer_get_time()-start_settle_time < 3000000) {
-        read_frame(vReal, vImag);
+        read_frame(voltages, vReal, vImag);
     }
     ESP_LOGI(TAG, "Finished settling mic sensitivity...");
     leds_scanning_stop();
 
     // Begin light show
     while (1) {
-        read_frame(vReal, vImag);
+        read_frame(voltages, vReal, vImag);
 
         // ESP_LOGI(TAG, "raw");
         // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');

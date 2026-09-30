@@ -1,8 +1,12 @@
-#include "esp_adc/adc_oneshot.h"
+#include <assert.h>
+#include <stdlib.h>
+
+#include "esp_adc/adc_continuous.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "soc/soc_caps.h"
 
 #include "mic.h"
 #include "config.h"
@@ -28,9 +32,14 @@ const static char *TAG = "mic";
 #define MIC_SENSITIVITY_INIT    128  // same as the MCP41050 power-on wiper
 #define MIC_SENSITIVITY_MAX     255
 
+// A frame is at most 25.6 ms (256 samples at 10 kHz), so waiting this long
+// means the ADC has stopped.
+#define MIC_READ_TIMEOUT_MS     1000
+
 static bool mic_calibrated = false;
-adc_oneshot_unit_handle_t mic_handle;
+adc_continuous_handle_t mic_handle;
 adc_cali_handle_t mic_cali_channel_handle = NULL;
+static uint8_t* mic_frame = NULL;
 static int mic_sensitivity = 0;
 
 
@@ -104,40 +113,83 @@ void mic_calibration_deinit(adc_cali_handle_t handle)
 }
 
 
+// The ADC samples the mic continuously by DMA, so the sample timing is set by
+// hardware and can't be disturbed by other tasks or interrupts.  Requires
+// config_init() to have been called first to size the frame.
 void mic_init(void) {
-    adc_oneshot_unit_init_cfg_t adc_config = {
-        .unit_id = CONFIG_MIC_UNIT,
-    };
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adc_config, &mic_handle));
+    uint32_t frame_size = _config_total_samples * SOC_ADC_DIGI_RESULT_BYTES;
 
-    adc_oneshot_chan_cfg_t adc_channel_config = {
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = CONFIG_MIC_ATTEN,
+    // The driver hands over one FFT frame at a time and keeps only the newest
+    // one.  If the main loop falls behind, older frames are dropped, so the
+    // LEDs never lag the sound by more than a frame.
+    adc_continuous_handle_cfg_t handle_config = {
+        .max_store_buf_size = frame_size,
+        .conv_frame_size = frame_size,
+        .flags.flush_pool = 1,
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(mic_handle, CONFIG_MIC_CHANNEL, &adc_channel_config));
+    ESP_ERROR_CHECK(adc_continuous_new_handle(&handle_config, &mic_handle));
+
+    adc_digi_pattern_config_t pattern = {
+        .atten = CONFIG_MIC_ATTEN,
+        .channel = CONFIG_MIC_CHANNEL,
+        .unit = CONFIG_MIC_UNIT,
+        .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH,
+    };
+    adc_continuous_config_t adc_config = {
+        .pattern_num = 1,
+        .adc_pattern = &pattern,
+        .sample_freq_hz = CONFIG_MIC_SAMPLE_FREQ_HZ,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DIGI_OUTPUT_FORMAT_TYPE2,
+    };
+    ESP_ERROR_CHECK(adc_continuous_config(mic_handle, &adc_config));
+
+    mic_frame = malloc(frame_size);
+    assert(mic_frame);
 
     mic_calibration_init(CONFIG_MIC_UNIT, CONFIG_MIC_CHANNEL, CONFIG_MIC_ATTEN, &mic_cali_channel_handle);
 
     // Requires digipot_init() to have been called first.
     mic_sensitivity_set(MIC_SENSITIVITY_INIT);
+
+    ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
 }
 
 
-int mic_read(void) {
-    int adc_raw;
+static int mic_raw_to_voltage(int adc_raw) {
     int voltage;
-
-    ESP_ERROR_CHECK(adc_oneshot_read(mic_handle, CONFIG_MIC_CHANNEL, &adc_raw));
-    // ESP_LOGI(TAG, "Read ADC Raw Data: %d", adc_raw);
 
     if (mic_cali_channel_handle) {
         ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
     } else {
         voltage = (adc_raw * 3100) / 4095;
     }
-    // ESP_LOGI(TAG, "Calculate ADC Voltage: %d mV", voltage);
 
     return voltage;
+}
+
+
+// Blocks until total_samples consecutive samples are ready, and returns them
+// in mV.  total_samples must not exceed the frame size set by mic_init().
+void mic_read_frame(int* voltages, int total_samples) {
+    int n = 0;
+
+    while (n < total_samples) {
+        uint32_t length = 0;
+        uint32_t wanted = (total_samples - n) * SOC_ADC_DIGI_RESULT_BYTES;
+
+        // The driver can return part of a frame, so keep reading until it's full.
+        ESP_ERROR_CHECK(adc_continuous_read(mic_handle, mic_frame, wanted, &length, MIC_READ_TIMEOUT_MS));
+
+        for (uint32_t i = 0; i < length; i += SOC_ADC_DIGI_RESULT_BYTES) {
+            adc_digi_output_data_t* result = (adc_digi_output_data_t*)&mic_frame[i];
+
+            // Skip the occasional invalid result, which reports a bogus channel.
+            if (result->type2.channel != CONFIG_MIC_CHANNEL)
+                continue;
+            voltages[n++] = mic_raw_to_voltage(result->type2.data);
+        }
+    }
 }
 
 
@@ -183,7 +235,10 @@ void mic_sensitivity_update(int min_mv, int max_mv) {
 
 void mic_stop(void) {
     //Tear Down
-    ESP_ERROR_CHECK(adc_oneshot_del_unit(mic_handle));
+    ESP_ERROR_CHECK(adc_continuous_stop(mic_handle));
+    ESP_ERROR_CHECK(adc_continuous_deinit(mic_handle));
+    free(mic_frame);
+    mic_frame = NULL;
     if (mic_calibrated) {
         mic_calibration_deinit(mic_cali_channel_handle);
     }

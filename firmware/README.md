@@ -8,7 +8,8 @@ result.
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/)
   v5.x (the project was created with v5.5.1)
-- Target: ESP32-C3 (an ESP32 pin mapping also exists in `main/config.h`)
+- Target: ESP32-C3 only.  Other targets fail to build: the original ESP32
+  can't read the mic's ADC in DMA mode, and other models are untested.
 - [esp-dsp](https://components.espressif.com/components/espressif/esp-dsp),
   fetched automatically by the IDF Component Manager
 
@@ -31,10 +32,16 @@ or `/dev/ttyACM0` on Linux.  Exit the monitor with `Ctrl-]`.
    are fitted, and pick the FFT size from that.
 2. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
    on the wings while the mic sensitivity adjusts to the room.
-3. **Light show** (`main.c`, `leds.c`): forever, sample the mic at a nominal
-   10 kHz, adjust the mic sensitivity, apply a Blackman window and FFT,
-   subtract a fixed noise floor, apply a peak-and-decay filter, and send the
-   bins to the LEDs.
+3. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
+   adjust the mic sensitivity, apply a Blackman window and FFT, subtract a
+   fixed noise floor, apply a peak-and-decay filter, and send the bins to the
+   LEDs.
+
+The ADC samples the mic at 10 kHz in continuous (DMA) mode, so the sample
+timing is set by hardware, not software delays, and other tasks such Bluetooth
+can't disturb it.  The driver keeps only the newest frame: if the FFT and LED
+update fall behind, older frames are dropped, so the lights never lag the sound
+by more than one frame (6.4 ms for 64 samples, 25.6 ms for 256).
 
 LEDs are driven in left/right pairs.  Each group of three FFT bins becomes
 one colour; the right wing gets it as GRB and the left wing with the channels
@@ -78,7 +85,7 @@ All pins are defined in [`main/config.h`](main/config.h).
 |-----------------------|---------|
 | `main.c`              | Startup and the main sample → FFT → LED loop |
 | `config.c/h`          | Pin assignments and jumper-based LED count |
-| `mic.c/h`             | ADC one-shot reads of the microphone, with ADC calibration, and automatic mic sensitivity |
+| `mic.c/h`             | Continuous (DMA) sampling of the microphone, with ADC calibration, and automatic mic sensitivity |
 | `fft.c/h`             | FFT, windowing and magnitude (C port of arduinoFFT, GPL-3.0) |
 | `leds.c/h`            | WS2812B output over RMT, startup scanning animation |
 | `led_strip_encoder.c/h` | RMT encoder for WS2812B (from the ESP-IDF examples) |
