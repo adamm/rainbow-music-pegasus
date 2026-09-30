@@ -108,12 +108,16 @@ ready Spring 2027 as v1.2.
 - [X] Release v1 for Breyer West 2024
 - [X] Listen to music
 - [X] Interpret music signal into the light show
+- [X] Support a rechargable LiPo battery
+- [ ] Report the battery level at startup via wing colours (i.e. flap green, yellow, red)
 - [X] Replace USB-mini with USB-C for power
 - [ ] Implement "Set Mode" button
 - [ ] Add wifi support
 - [ ] Add bluetooth support
-- [X] Add battery support
 - [ ] Release v1.2 for Calgary Makerfaire 2027
+- [ ] Sync with nearby horses for an enhanced light show
+- [ ] Control of colour modes and settings via Web Bluetooth
+- [ ] Firmware updates over BLE
 
 ## License
 

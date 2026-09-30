@@ -58,15 +58,19 @@ for up to 10 LEDs, 128 for up to 16, and 256 above that.
 
 All pins are defined in [`main/config.h`](main/config.h).
 
-| Function                    | GPIO |
-|-----------------------------|------|
-| Button                      | 1    |
-| WS2812B data                | 3    |
-| Microphone (ADC1 channel 4) | 4    |
-| LED-count jumpers           | 5, 6, 7 |
-| Digipot MOSI                | 10   |
-| Digipot CS                  | 18   |
-| Digipot CLK                 | 19   |
+| Function                    | GPIO | Direction |
+|-----------------------------|------|-----------|
+| Battery Level               | 0    | Input     |
+| Button                      | 1    | Input     |
+| WS2812B data                | 3    | Output    |
+| Microphone (ADC1 channel 4) | 4    | Input     |
+| LED-count jumpers           | 5, 6, 7 | Input  |
+| ESP32 Bootloader mode       | 9    | Input     |
+| Digipot MOSI                | 10   | Output    |
+| Digipot CS                  | 18   | Output    |
+| Digipot CLK                 | 19   | Output    |
+| Serial RXD / Code Upload    | 20   | Input     |
+| Serial TXD / Activity Log   | 21   | Output    |    
 
 ## Source layout
 
@@ -84,7 +88,7 @@ All pins are defined in [`main/config.h`](main/config.h).
 
 The MCP41050's B–W resistance is the feedback resistor of the second op-amp
 stage (U2B), so the preamp gain is proportional to it.  Wiper code 00h is at
-terminal B, so a **higher wiper code means higher gain**.  `mic.c` uses the
+terminal B, so a higher wiper code means higher gain.  `mic.c` uses the
 wiper code (0 to 255) directly as the sensitivity.
 
 After every frame, `mic_sensitivity_update()` checks the lowest and highest
