@@ -26,6 +26,32 @@ idf.py -p <PORT> flash monitor
 `<PORT>` is the board's USB serial device, e.g. `/dev/cu.usbmodem*` on macOS
 or `/dev/ttyACM0` on Linux.  Exit the monitor with `Ctrl-]`.
 
+## Unit tests
+
+The unit tests in [`test/`](test/) run on your computer, not the board, so
+they need only a C compiler and CMake 3.20 or later, not ESP-IDF or hardware.
+They use the [Unity](https://github.com/ThrowTheSwitch/Unity) test framework,
+which CMake downloads the first time.
+
+```sh
+cd firmware
+cmake -S test -B test/build
+cmake --build test/build
+ctest --test-dir test/build --output-on-failure
+```
+
+Each `test/test_<module>.c` tests `main/<module>.c`.  The ESP-IDF calls the
+firmware makes (GPIO, SPI, ADC, RMT, timer) go to the fakes in `test/fakes/`
+instead.  A test uses them to set what the hardware reports, such as jumper
+levels, ADC samples or the time, and to check what the firmware sent, such as
+digipot wiper codes or LED bytes.  Run one test program, e.g.
+`test/build/test_mic`, to see each of its tests by name.
+
+The tests are built with AddressSanitizer and UndefinedBehaviorSanitizer, so
+an out-of-bounds access fails a test instead of silently corrupting memory as
+it would on the ESP32-C3.  Pass `-DSANITIZE=OFF` to CMake if your compiler
+doesn't support them.
+
 ## How it works
 
 1. **Configure** (`config.c`): read jumpers JP5–JP7 to decide how many LEDs
