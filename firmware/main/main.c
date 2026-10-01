@@ -37,9 +37,15 @@ const static char *TAG = "main";
 // would produce it, so the LEDs behave the same whatever the frame size.  Bins
 // under the noise floor stay dark so amp and ADC hiss doesn't flicker the LEDs,
 // and bins at full scale light their LED at full brightness.  Full scale is well
-// under the ADC's ~8.5 mV of headroom, leaving room for peaks across many bins.
+// under the ADC's ~750 mV of headroom, leaving room for peaks across many bins.
 #define FFT_NOISE_FLOOR_MV 8.5f
 #define FFT_FULL_SCALE_MV  150.0f
+
+// Once the sound in a bin drops, its LED fades to about a third (1/e) of its
+// brightness in this time.  Fading by a fraction rather than a fixed step keeps
+// dim LEDs from blinking out, so quiet music doesn't flicker.  Rises show
+// immediately.
+#define LED_DECAY_US 150000
 
 double sampling_frequency = CONFIG_MIC_SAMPLE_FREQ_HZ;
 float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
@@ -110,8 +116,15 @@ void app_main(void)
     leds_scanning_stop();
 
     // Begin light show
+    int64_t last_frame_time = esp_timer_get_time();
     while (1) {
         read_spectrum(voltages, vReal, vImag);
+
+        // Base the fade on the time since the last frame, so its speed doesn't
+        // depend on the frame size or on frames the driver dropped.
+        int64_t now = esp_timer_get_time();
+        float decay = expf(-(float)(now - last_frame_time) / LED_DECAY_US);
+        last_frame_time = now;
 
         for (int i = 0; i < N_SAMPLES; i++) {
             // Scale each bin to an LED brightness from 0 to 250.
@@ -124,9 +137,7 @@ void app_main(void)
             if (vReal[i] > vDecay[i])
                 vDecay[i] = vReal[i];
             else
-                vDecay[i] -= 10;
-            if (vDecay[i] < 0)
-                vDecay[i] = 0;
+                vDecay[i] *= decay;
 
             colours[i] = (uint8_t)vDecay[i];
         }
