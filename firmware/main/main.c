@@ -83,6 +83,31 @@ static void read_spectrum(int* voltages, float* vReal, float* vImag)
 }
 
 
+// Replace each bin in vReal with its LED brightness, and set colours from it.
+// vDecay holds each LED's brightness from the last frame, elapsed_us ago:
+// louder bins show immediately, and quieter ones fade from there.
+static void spectrum_to_colours(float* vReal, float* vDecay, uint8_t* colours, int64_t elapsed_us)
+{
+    float decay = expf(-(float)elapsed_us / LED_DECAY_US);
+
+    for (int i = 0; i < N_SAMPLES; i++) {
+        // Scale each bin to an LED brightness from 0 to 250.
+        vReal[i] = (vReal[i] - FFT_NOISE_FLOOR_MV) * 250 / (FFT_FULL_SCALE_MV - FFT_NOISE_FLOOR_MV);
+        if (vReal[i] < 0)
+            vReal[i] = 0;
+        else if (vReal[i] > 250)
+            vReal[i] = 250;
+
+        if (vReal[i] > vDecay[i])
+            vDecay[i] = vReal[i];
+        else
+            vDecay[i] *= decay;
+
+        colours[i] = (uint8_t)vDecay[i];
+    }
+}
+
+
 void app_main(void)
 {
     config_init();
@@ -123,24 +148,9 @@ void app_main(void)
         // Base the fade on the time since the last frame, so its speed doesn't
         // depend on the frame size or on frames the driver dropped.
         int64_t now = esp_timer_get_time();
-        float decay = expf(-(float)(now - last_frame_time) / LED_DECAY_US);
+        spectrum_to_colours(vReal, vDecay, colours, now - last_frame_time);
         last_frame_time = now;
 
-        for (int i = 0; i < N_SAMPLES; i++) {
-            // Scale each bin to an LED brightness from 0 to 250.
-            vReal[i] = (vReal[i] - FFT_NOISE_FLOOR_MV) * 250 / (FFT_FULL_SCALE_MV - FFT_NOISE_FLOOR_MV);
-            if (vReal[i] < 0)
-                vReal[i] = 0;
-            else if (vReal[i] > 250)
-                vReal[i] = 250;
-
-            if (vReal[i] > vDecay[i])
-                vDecay[i] = vReal[i];
-            else
-                vDecay[i] *= decay;
-
-            colours[i] = (uint8_t)vDecay[i];
-        }
         // printf("R: ");
         // for (int i = 0; i < 16; i++) {
         //     printf("%0.1f ", vReal[i]);
