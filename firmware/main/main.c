@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,33 +28,52 @@ const static char *TAG = "main";
 
 
 #define N_SAMPLES _config_total_samples
+// leds_display() only shows the lowest bins, three per pair of LEDs.
+#define N_DISPLAYED_BINS (_config_total_leds * 3 / 2)
 
-// Subtracted from every FFT bin so amp and ADC hiss doesn't flicker the LEDs.
-#define FFT_NOISE_FLOOR 100
+// Average weight of the Blackman window, which scales every FFT bin.
+#define FFT_WINDOW_GAIN 0.42323f
+// Each bin is converted to the amplitude, in mV at the ADC, of a sine wave that
+// would produce it, so the LEDs behave the same whatever the frame size.  Bins
+// under the noise floor stay dark so amp and ADC hiss doesn't flicker the LEDs,
+// and bins at full scale light their LED at full brightness.  Full scale is well
+// under the ADC's ~8.5 mV of headroom, leaving room for peaks across many bins.
+#define FFT_NOISE_FLOOR_MV 8.5f
+#define FFT_FULL_SCALE_MV  150.0f
 
 double sampling_frequency = CONFIG_MIC_SAMPLE_FREQ_HZ;
 float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
 
 
-// Sample one frame from the mic, then let the mic adjust its sensitivity based
-// on how loud the frame was.
-static void read_frame(int* voltages, float* vReal, float* vImag)
+// Sample one frame from the mic and replace vReal with its FFT bins in mV.
+// Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
+// clipped or the brightest LED would be at full brightness, too quiet if the
+// loudest bin is under a quarter of that.  The 12 dB gap between the two is
+// several sensitivity steps wide, so the gain settles instead of hunting.
+static void read_spectrum(int* voltages, float* vReal, float* vImag)
 {
-    int min = INT_MAX;
-    int max = INT_MIN;
-
-    mic_read_frame(voltages, N_SAMPLES);
+    float peak = 0;
+    bool clipped = mic_read_frame(voltages, N_SAMPLES);
 
     for (int i = 0; i < N_SAMPLES; i++) {
-        if (voltages[i] < min)
-            min = voltages[i];
-        if (voltages[i] > max)
-            max = voltages[i];
         vReal[i] = (float)(voltages[i] - 1650);
         vImag[i] = 0;
     }
 
-    mic_sensitivity_update(min, max);
+    // ESP_LOGI(TAG, "raw");
+    // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
+    fft_dcRemoval();
+    fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
+    fft_compute(FFT_FORWARD);
+    fft_complexToMagnitude();
+
+    for (int i = 0; i < N_SAMPLES; i++) {
+        vReal[i] /= N_SAMPLES / 2 * FFT_WINDOW_GAIN;
+        if (i < N_DISPLAYED_BINS && vReal[i] > peak)
+            peak = vReal[i];
+    }
+
+    mic_sensitivity_update(clipped || peak >= FFT_FULL_SCALE_MV, peak < FFT_FULL_SCALE_MV / 4);
 }
 
 
@@ -86,30 +104,22 @@ void app_main(void)
     // the light show starts.
     ESP_LOGI(TAG, "Settling mic sensitivity...");
     while (esp_timer_get_time()-start_settle_time < 3000000) {
-        read_frame(voltages, vReal, vImag);
+        read_spectrum(voltages, vReal, vImag);
     }
     ESP_LOGI(TAG, "Finished settling mic sensitivity...");
     leds_scanning_stop();
 
     // Begin light show
     while (1) {
-        read_frame(voltages, vReal, vImag);
-
-        // ESP_LOGI(TAG, "raw");
-        // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
-        fft_dcRemoval();
-        fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
-        fft_compute(FFT_FORWARD);
-        fft_complexToMagnitude();
-
+        read_spectrum(voltages, vReal, vImag);
 
         for (int i = 0; i < N_SAMPLES; i++) {
-            vReal[i] -= FFT_NOISE_FLOOR;
+            // Scale each bin to an LED brightness from 0 to 250.
+            vReal[i] = (vReal[i] - FFT_NOISE_FLOOR_MV) * 250 / (FFT_FULL_SCALE_MV - FFT_NOISE_FLOOR_MV);
             if (vReal[i] < 0)
                 vReal[i] = 0;
-            else if (vReal[i] > 2000)
-                vReal[i] = 2000;
-            vReal[i] /= 8;
+            else if (vReal[i] > 250)
+                vReal[i] = 250;
 
             if (vReal[i] > vDecay[i])
                 vDecay[i] = vReal[i];

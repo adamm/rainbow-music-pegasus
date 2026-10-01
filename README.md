@@ -90,7 +90,8 @@ jumpers and how the audio pipeline works.
 ## Mic sensitivity
 
 The microphone's sensitivity adjusts automatically.  If the sound is too quiet
-it is turned up, and if it is so loud the signal clips it is turned down.  For
+it is turned up, and if it is so loud the wings stay at full brightness it is
+turned down.  For
 3 seconds after power-on, the wings will appear to "flap" in white while the
 sensitivity settles to the room.  When the device is moved between quiet and
 loud environments, it takes a few seconds to catch up.

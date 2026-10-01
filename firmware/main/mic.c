@@ -19,8 +19,6 @@ const static char *TAG = "mic";
 // positive half-wave clips first.
 #define MIC_CLIP_LOW_MV         100
 #define MIC_CLIP_HIGH_MV        2400
-// A frame is too quiet if its peak-to-peak is buried in the ADC noise.
-#define MIC_QUIET_P2P_MV        50
 // How long a frame condition must persist before stepping the sensitivity.
 // Measured in time, not frames, since the frame length depends on the FFT size.
 #define MIC_LOUD_HOLD_US        50000
@@ -170,8 +168,10 @@ static int mic_raw_to_voltage(int adc_raw) {
 
 
 // Blocks until total_samples consecutive samples are ready, and returns them
-// in mV.  total_samples must not exceed the frame size set by mic_init().
-void mic_read_frame(int* voltages, int total_samples) {
+// in mV.  Returns true if any sample got close enough to the ADC rails to have
+// clipped.  total_samples must not exceed the frame size set by mic_init().
+bool mic_read_frame(int* voltages, int total_samples) {
+    bool clipped = false;
     int n = 0;
 
     while (n < total_samples) {
@@ -187,23 +187,26 @@ void mic_read_frame(int* voltages, int total_samples) {
             // Skip the occasional invalid result, which reports a bogus channel.
             if (result->type2.channel != CONFIG_MIC_CHANNEL)
                 continue;
-            voltages[n++] = mic_raw_to_voltage(result->type2.data);
+            int voltage = mic_raw_to_voltage(result->type2.data);
+            if (voltage <= MIC_CLIP_LOW_MV || voltage >= MIC_CLIP_HIGH_MV)
+                clipped = true;
+            voltages[n++] = voltage;
         }
     }
+
+    return clipped;
 }
 
 
-// Called once per frame with the lowest and highest voltage read in it.
-// Progressively lowers the preamp gain while frames keep clipping, and raises
-// it while frames stay too quiet to be useful.  Clipping is stepped down faster
-// (~2.5 dB) than quiet is stepped up (~1 dB).  Steps are proportional to the
-// current sensitivity so each one is roughly the same number of dB.
-void mic_sensitivity_update(int min_mv, int max_mv) {
+// Called once per frame with whether that frame was too loud or too quiet.
+// Progressively lowers the preamp gain while frames keep being too loud, and
+// raises it while they stay too quiet.  Loud is stepped down faster (~2.5 dB)
+// than quiet is stepped up (~1 dB).  Steps are proportional to the current
+// sensitivity so each one is roughly the same number of dB.
+void mic_sensitivity_update(bool loud, bool quiet) {
     static int64_t loud_since = 0;
     static int64_t quiet_since = 0;
     int64_t now = esp_timer_get_time();
-    bool loud = (min_mv <= MIC_CLIP_LOW_MV || max_mv >= MIC_CLIP_HIGH_MV);
-    bool quiet = (max_mv - min_mv < MIC_QUIET_P2P_MV);
     int old = mic_sensitivity;
 
     if (!loud)

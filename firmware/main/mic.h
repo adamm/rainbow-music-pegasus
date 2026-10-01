@@ -7,8 +7,8 @@
 bool mic_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
 void mic_calibration_deinit(adc_cali_handle_t handle);
 void mic_init(void);
-void mic_read_frame(int* voltages, int total_samples);
-void mic_sensitivity_update(int min_mv, int max_mv);
+bool mic_read_frame(int* voltages, int total_samples);
+void mic_sensitivity_update(bool loud, bool quiet);
 void mic_stop(void);
 
 #endif

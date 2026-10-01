@@ -33,7 +33,7 @@ or `/dev/ttyACM0` on Linux.  Exit the monitor with `Ctrl-]`.
 2. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
    on the wings while the mic sensitivity adjusts to the room.
 3. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
-   adjust the mic sensitivity, apply a Blackman window and FFT, subtract a
+   apply a Blackman window and FFT, adjust the mic sensitivity, subtract a
    fixed noise floor, apply a peak-and-decay filter, and send the bins to the
    LEDs.
 
@@ -98,17 +98,23 @@ stage (U2B), so the preamp gain is proportional to it.  Wiper code 00h is at
 terminal B, so a higher wiper code means higher gain.  `mic.c` uses the
 wiper code (0 to 255) directly as the sensitivity.
 
-After every frame, `mic_sensitivity_update()` checks the lowest and highest
-voltage read:
+After every frame's FFT, `main.c` looks at the loudest bin the LEDs show and
+tells `mic_sensitivity_update()` whether the frame was too loud or too quiet:
 
-- If frames keep clipping near the ADC rails for 50 ms, the sensitivity
-  drops by a quarter (about -2.5 dB).
-- If frames stay under 50 mV peak-to-peak for 200 ms, the sensitivity rises
-  by an eighth (about +1 dB).
+- If the brightest LED stays at full brightness, or the samples keep clipping
+  near the ADC rails, for 50 ms, the sensitivity drops by a quarter (about
+  -2.5 dB).
+- If the loudest bin stays under a quarter of full brightness for 200 ms, the
+  sensitivity rises by an eighth (about +1 dB).
 
 The steps repeat while the condition lasts, so after moving to a louder or
-quieter room the lights recover within a few seconds.  The thresholds and
-hold times are `#define`s at the top of `mic.c`.
+quieter room the lights recover within a few seconds.
+
+Each FFT bin is converted to millivolts at the ADC, so the LEDs behave the same
+whatever the frame size.  The brightness range is set by `FFT_NOISE_FLOOR_MV`
+and `FFT_FULL_SCALE_MV` in `main.c`.  Raising full scale makes the sensitivity
+settle higher, using more of the ADC's range, as long as the signal doesn't
+clip.  The clipping limits and hold times are `#define`s at the top of `mic.c`.
 
 ## Logs
 
