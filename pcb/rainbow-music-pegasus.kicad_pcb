@@ -14578,6 +14578,17 @@
 				(xyz 0 0 0)
 			)
 		)
+		(model "${KIPRJMOD}/espressif/3dmodels/espressif.3dshapes/ESP32-C3-MINI-1.STEP"
+			(offset
+				(xyz -6.5 -8.25 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz -0 -0 -0)
+			)
+		)
 	)
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
