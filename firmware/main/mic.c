@@ -236,6 +236,18 @@ void mic_sensitivity_update(bool loud, bool quiet) {
 }
 
 
+// ADC1 can sample continuously or take oneshot readings, but not both at once,
+// so pause the mic while another of its channels, such as the battery, is read.
+void mic_pause(void) {
+    ESP_ERROR_CHECK(adc_continuous_stop(mic_handle));
+}
+
+
+void mic_resume(void) {
+    ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
+}
+
+
 void mic_stop(void) {
     //Tear Down
     ESP_ERROR_CHECK(adc_continuous_stop(mic_handle));

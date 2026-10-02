@@ -17,6 +17,7 @@
 #include "soc/soc_caps.h"
 
 
+#include "battery.h"
 #include "config.h"
 #include "digipot.h"
 #include "fft.h"
@@ -46,6 +47,10 @@ const static char *TAG = "main";
 // dim LEDs from blinking out, so quiet music doesn't flicker.  Rises show
 // immediately.
 #define LED_DECAY_US 150000
+
+// How often to check the battery during the light show.  Each check delays the
+// next frame by up to a frame, which is too brief and rare to notice.
+#define BATTERY_CHECK_US 10000000
 
 double sampling_frequency = CONFIG_MIC_SAMPLE_FREQ_HZ;
 float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
@@ -108,6 +113,16 @@ static void spectrum_to_colours(float* vReal, float* vDecay, uint8_t* colours, i
 }
 
 
+// Read the battery, and have the LEDs warn if it's low.  ADC1 can't take a
+// battery reading while it samples the mic continuously, so pause the mic for it.
+static void read_battery(void)
+{
+    mic_pause();
+    leds_show_low_battery(battery_check());
+    mic_resume();
+}
+
+
 void app_main(void)
 {
     config_init();
@@ -124,6 +139,9 @@ void app_main(void)
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
 
     digipot_init();
+    battery_init();
+    // The mic isn't sampling yet, so ADC1 is free for the first battery reading.
+    leds_show_low_battery(battery_check());
     mic_init();
     leds_init();
     leds_scanning_start();
@@ -142,6 +160,7 @@ void app_main(void)
 
     // Begin light show
     int64_t last_frame_time = esp_timer_get_time();
+    int64_t last_battery_time = last_frame_time;
     while (1) {
         read_spectrum(voltages, vReal, vImag);
 
@@ -164,9 +183,15 @@ void app_main(void)
         // dsps_view(vReal, N_SAMPLES, 64, 10, 0, 255, '-');
 
         leds_display(colours, N_SAMPLES/2);
+
+        if (now - last_battery_time >= BATTERY_CHECK_US) {
+            read_battery();
+            last_battery_time = now;
+        }
     }
 
     mic_stop();
+    battery_stop();
     digipot_stop();
 }
 

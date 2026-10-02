@@ -1,4 +1,5 @@
 idf_component_register(SRCS
+                        "battery.c"
                         "config.c"
                         "digipot.c"
                         "fft.c"

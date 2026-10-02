@@ -1,6 +1,8 @@
 #ifndef __LEDS_H__
 #define __LEDS_H__
 
+#include <stdbool.h>
+
 typedef struct {
     uint8_t red;
     uint8_t green;
@@ -11,5 +13,6 @@ void leds_init(void);
 void leds_scanning_start(void);
 void leds_scanning_stop(void);
 void leds_display(uint8_t*, int);
+void leds_show_low_battery(bool);
 
 #endif 

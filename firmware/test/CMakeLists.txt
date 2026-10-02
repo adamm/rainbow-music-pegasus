@@ -58,6 +58,7 @@ add_firmware_test(test_fft     fft.c)
 
 # These tests #include the .c file they test, to reach its static state, so
 # it isn't listed here.
+add_firmware_test(test_battery)
 add_firmware_test(test_leds    config.c)
 add_firmware_test(test_mic     config.c digipot.c)
 add_firmware_test(test_main    config.c digipot.c fft.c leds.c)

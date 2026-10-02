@@ -1,9 +1,9 @@
 // Tests for main.c's signal path, from a frame of mic samples to LED
-// brightnesses.
+// brightnesses, and for how it reads the battery.
 //
 // This includes main.c, rather than linking it, to reach its static functions,
-// and replaces mic.c with the fake mic below, so each test chooses what the mic
-// hears.
+// and replaces mic.c and battery.c with the fakes below, so each test chooses
+// what the mic hears and whether the battery is low.
 #include "main.c"
 
 #include "fake_idf.h"
@@ -42,6 +42,38 @@ void mic_sensitivity_update(bool loud, bool quiet)
     reported_quiet = quiet;
 }
 
+static bool mic_paused;
+
+void mic_pause(void)
+{
+    TEST_ASSERT_FALSE_MESSAGE(mic_paused, "Mic paused twice");
+    mic_paused = true;
+}
+
+void mic_resume(void)
+{
+    TEST_ASSERT_TRUE_MESSAGE(mic_paused, "Mic resumed without a pause");
+    mic_paused = false;
+}
+
+// The fake battery.  battery_check() records whether the mic was paused, as
+// ADC1 can't read the battery while it samples the mic.
+static bool checked_with_mic_paused;
+
+void battery_init(void)
+{
+}
+
+void battery_stop(void)
+{
+}
+
+bool battery_check(void)
+{
+    checked_with_mic_paused = mic_paused;
+    return false;
+}
+
 static int voltages[MAX_SAMPLES];
 static float vReal[MAX_SAMPLES];
 static float vImag[MAX_SAMPLES];
@@ -62,6 +94,8 @@ void setUp(void)
     fake_idf_reset();
     memset(vDecay, 0, sizeof(vDecay));
     heard_clipped = false;
+    mic_paused = false;
+    checked_with_mic_paused = false;
     use_board(10, 64);
 }
 
@@ -245,6 +279,15 @@ void test_one_long_frame_fades_as_much_as_several_short_ones(void)
 }
 
 
+void test_the_battery_is_read_with_the_mic_paused(void)
+{
+    read_battery();
+
+    TEST_ASSERT_TRUE(checked_with_mic_paused);
+    TEST_ASSERT_FALSE(mic_paused);
+}
+
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -261,5 +304,6 @@ int main(void)
     RUN_TEST(test_a_louder_bin_lights_its_led_at_once);
     RUN_TEST(test_a_quieter_bin_fades_to_1_over_e_in_the_decay_time);
     RUN_TEST(test_one_long_frame_fades_as_much_as_several_short_ones);
+    RUN_TEST(test_the_battery_is_read_with_the_mic_paused);
     return UNITY_END();
 }

@@ -5,11 +5,14 @@
 #ifdef CONFIG_IDF_TARGET_ESP32C3
 #define CONFIG_MIC_UNIT                ADC_UNIT_1
 #define CONFIG_MIC_CHANNEL             ADC_CHANNEL_4   // GPIO 4
+#define CONFIG_BATTERY_UNIT            ADC_UNIT_1
+#define CONFIG_BATTERY_CHANNEL         ADC_CHANNEL_0   // GPIO 0
 #else
 #error "Only ESP32C3 is tested/supported. The original ESP32 won't work due to how audio is read. YMMV for other ESP32 models."
 #endif
 #define CONFIG_MIC_ATTEN               ADC_ATTEN_DB_12
 #define CONFIG_MIC_SAMPLE_FREQ_HZ      10000
+#define CONFIG_BATTERY_ATTEN           ADC_ATTEN_DB_12
 
 #define CONFIG_GPIO_RGB_DATA           3
 

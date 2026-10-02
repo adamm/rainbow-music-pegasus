@@ -10,8 +10,10 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_adc/adc_continuous.h"
+#include "esp_adc/adc_oneshot.h"
 
 #define FAKE_ADC_MAX_RESULTS    1024
+#define FAKE_ADC_CHANNELS       8
 #define FAKE_RMT_MAX_BYTES      256
 
 typedef struct {
@@ -42,6 +44,15 @@ typedef struct {
     int adc_queued;
     int adc_read;
     int adc_read_chunk;
+
+    // How the ADC was set up for oneshot readings.  adc_oneshot_read() returns
+    // adc_oneshot_raw[] for the channel it reads, but like the real driver, it
+    // fails while the ADC is sampling continuously.
+    adc_oneshot_unit_init_cfg_t adc_oneshot_unit;
+    adc_channel_t adc_oneshot_channel;
+    adc_oneshot_chan_cfg_t adc_oneshot_channel_config;
+    int adc_oneshot_raw[FAKE_ADC_CHANNELS];
+    int adc_oneshot_reads;
 
     // Whether the chip's eFuse holds ADC calibration.  The fake calibration
     // converts each raw reading to the same number of mV, so tests can queue

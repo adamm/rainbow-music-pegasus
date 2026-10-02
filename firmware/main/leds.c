@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "driver/rmt_tx.h"
 
 #include "config.h"
@@ -16,10 +17,19 @@
 
 #define RMT_LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 
+// While the battery is low, the first LED in each wing blinks red over the light
+// show, for LEDS_LOW_BATTERY_ON_US every LEDS_LOW_BATTERY_PERIOD_US.  The light
+// show never lights both LEDs of a pair pure red, so the blink can't be mistaken
+// for the music, and every other LED shows the music as usual.
+#define LEDS_LOW_BATTERY_PERIOD_US  3000000
+#define LEDS_LOW_BATTERY_ON_US      250000
+#define LEDS_LOW_BATTERY_RED        128
+
 static const char *TAG = "leds";
 
 static uint8_t led_strip_pixels[CONFIG_MAX_LEDS * 3];
 static TaskHandle_t scanning_task = NULL;
+static bool low_battery = false;
 
 /**
  * @brief Simple helper function, converting HSV color space to RGB color space
@@ -196,6 +206,21 @@ void leds_display(uint8_t* values, int total_values) {
 
         // Pretty neat!
     }
+
+    // The first pair of LEDs is the nearest the ESP32, and is fitted on every board.
+    if (low_battery && esp_timer_get_time() % LEDS_LOW_BATTERY_PERIOD_US < LEDS_LOW_BATTERY_ON_US) {
+        for (int i = 0; i < 2; i++) {
+            led_strip_pixels[i*3]   = 0;                     // green
+            led_strip_pixels[i*3+1] = LEDS_LOW_BATTERY_RED;  // red
+            led_strip_pixels[i*3+2] = 0;                     // blue
+        }
+    }
+
     ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
     ESP_ERROR_CHECK(rmt_tx_wait_all_done(led_chan, portMAX_DELAY));
+}
+
+
+void leds_show_low_battery(bool low) {
+    low_battery = low;
 }

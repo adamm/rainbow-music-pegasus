@@ -56,6 +56,14 @@ R11), which keeps the charge rate at or below 0.5C for a 400mAh cell.  Larger
 batteries are fine but take longer to charge: roughly 4 hours for 800mAh and
 10 hours for 2000mAh.
 
+When the battery runs low (under about 3.6V), the first light in each wing
+blinks red every 3 seconds.  The rest of the light show carries on as usual.
+The blinking stops once the battery is charging:
+
+- **v1.1**: once charging brings the battery back over 3.7V.
+- **v1.2**: within 10 seconds of plugging in USB.  While USB is plugged in,
+  v1.2 measures the USB supply rather than the battery.
+
 ## Repository layout
 
 | Path                 | Contents |
@@ -110,7 +118,7 @@ ready Spring 2027 as v1.2.
 - [X] Listen to music
 - [X] Interpret music signal into the light show
 - [X] Support a rechargable LiPo battery
-- [ ] Report the battery level at startup via wing colours (i.e. flap green, yellow, red)
+- [X] Low battery warning
 - [X] Replace USB-mini with USB-C for power
 - [ ] Implement "Set Mode" button
 - [ ] Add wifi support

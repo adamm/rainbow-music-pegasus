@@ -21,6 +21,7 @@ static void boot(void)
     mic_cali_channel_handle = NULL;
     mic_sensitivity = 0;
     mic_sensitivity_update(false, false);  // clears its hold timers
+    fake.adc_running = false;
 
     _config_total_samples = FRAME_SAMPLES;
     digipot_init();
@@ -172,6 +173,23 @@ void test_read_frame_without_calibration_assumes_3100mv_full_scale(void)
 }
 
 
+// So ADC1 can take a oneshot battery reading in between.
+void test_pause_stops_sampling_until_resume(void)
+{
+    mic_pause();
+    TEST_ASSERT_FALSE(fake.adc_running);
+
+    mic_resume();
+    TEST_ASSERT_TRUE(fake.adc_running);
+
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 1650);
+    int mv[FRAME_SAMPLES];
+    mic_read_frame(mv, FRAME_SAMPLES);
+    TEST_ASSERT_EACH_EQUAL_INT(1650, mv, FRAME_SAMPLES);
+}
+
+
 void test_sensitivity_starts_at_the_digipot_power_on_wiper(void)
 {
     TEST_ASSERT_EQUAL(128, wiper());
@@ -269,6 +287,7 @@ int main(void)
     RUN_TEST(test_read_frame_reads_no_further_than_the_frame);
     RUN_TEST(test_read_frame_reports_clipping_near_the_adc_rails);
     RUN_TEST(test_read_frame_without_calibration_assumes_3100mv_full_scale);
+    RUN_TEST(test_pause_stops_sampling_until_resume);
     RUN_TEST(test_sensitivity_starts_at_the_digipot_power_on_wiper);
     RUN_TEST(test_loud_lowers_sensitivity_by_a_quarter_once_held);
     RUN_TEST(test_loud_keeps_lowering_sensitivity_while_it_lasts);

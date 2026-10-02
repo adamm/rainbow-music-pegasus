@@ -56,12 +56,14 @@ doesn't support them.
 
 1. **Configure** (`config.c`): read jumpers JP5–JP7 to decide how many LEDs
    are fitted, and pick the FFT size from that.
-2. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
+2. **Battery** (`battery.c`): take a first battery reading while the LEDs
+   are still dark.
+3. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
    on the wings while the mic sensitivity adjusts to the room.
-3. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
+4. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
    apply a Blackman window and FFT, adjust the mic sensitivity, subtract a
    fixed noise floor, apply a peak-and-decay filter, and send the bins to the
-   LEDs.
+   LEDs.  Every 10 seconds, check the battery.
 
 The ADC samples the mic at 10 kHz in continuous (DMA) mode, so the sample
 timing is set by hardware, not software delays, and other tasks such Bluetooth
@@ -93,7 +95,7 @@ All pins are defined in [`main/config.h`](main/config.h).
 
 | Function                    | GPIO | Direction |
 |-----------------------------|------|-----------|
-| Battery Level               | 0    | Input     |
+| Battery (ADC1 channel 0)    | 0    | Input     |
 | Button                      | 1    | Input     |
 | WS2812B data                | 3    | Output    |
 | Microphone (ADC1 channel 4) | 4    | Input     |
@@ -112,8 +114,9 @@ All pins are defined in [`main/config.h`](main/config.h).
 | `main.c`              | Startup and the main sample → FFT → LED loop |
 | `config.c/h`          | Pin assignments and jumper-based LED count |
 | `mic.c/h`             | Continuous (DMA) sampling of the microphone, with ADC calibration, and automatic mic sensitivity |
+| `battery.c/h`         | Battery voltage readings, smoothing, and the low-battery decision |
 | `fft.c/h`             | FFT, windowing and magnitude (C port of arduinoFFT, GPL-3.0) |
-| `leds.c/h`            | WS2812B output over RMT, startup scanning animation |
+| `leds.c/h`            | WS2812B output over RMT, startup scanning animation, low-battery blink |
 | `led_strip_encoder.c/h` | RMT encoder for WS2812B (from the ESP-IDF examples) |
 | `digipot.c/h`         | SPI driver for the MCP41050 digital potentiometer |
 
@@ -142,10 +145,53 @@ and `FFT_FULL_SCALE_MV` in `main.c`.  Raising full scale makes the sensitivity
 settle higher, using more of the ADC's range, as long as the signal doesn't
 clip.  The clipping limits and hold times are `#define`s at the top of `mic.c`.
 
+## Battery level
+
+R12 and R13 (100k each) halve the battery voltage at GPIO 0, so a full 4.2 V
+battery reads 2.1 V.  `battery.c` averages 16 oneshot ADC readings and
+doubles the result.
+
+The mic and the battery are both on ADC1, which can sample continuously or
+take oneshot readings but not both at once.  So `main.c` takes the first
+reading at power-on, before the mic starts.  After that, every 10 seconds it
+pauses the mic (`mic_pause()`), reads the battery and resumes the mic
+(`mic_resume()`).  This delays the next frame by at most a frame (25.6 ms).
+
+The voltage dips with the music as the LEDs draw current, so readings are
+smoothed.  The smoothed voltage moves about two thirds of the way to a new
+reading over 30 seconds.  The first reading is taken as is, because the LEDs
+are still dark.  The battery is low once the smoothed voltage is under
+3.6 V.  It stays low until the voltage is back over 3.7 V, so the warning
+doesn't flicker on and off around 3.6 V.  The LEDs and ESP32-C3 run from a
+3.3 V regulator, which starts to drop out with the battery under about 3.4 V.
+
+While the battery is low, the first LED in each wing (the first pair on the
+strip, nearest the ESP32) blinks red for a quarter of a second every 3
+seconds.  It shows the music the rest of the time, and the other LEDs aren't
+affected.  The light
+show can't make both LEDs of a pair pure red, so the blink can't be mistaken
+for music.
+
+What GPIO 0 measures depends on the board:
+
+- **v1.1**: the divider is wired straight to the battery, so it always reads
+  the battery, even while USB charges it.  The warning stops once charging
+  brings the battery back over 3.7 V.
+- **v1.2**: the divider is after the power switch, so it doesn't drain the
+  battery while the switch is off.  While USB is plugged in it reads the USB
+  supply, about 4.6 V after D25, instead of the battery.  The warning stops at
+  the next check after USB is plugged in.
+
+The thresholds, smoothing time and number of samples are `#define`s at the
+top of `battery.c`.  The check interval is in `main.c`, and the blink's
+timing and brightness are in `leds.c`.
+
 ## Logs
 
 Useful messages appear in the serial monitor:
 
 - `config`: which jumpers are closed, the LED count and the FFT size
+- `battery`: each reading, e.g. `3712 mV, smoothed 3698 mV`, and when the
+  battery becomes low or stops being low
 - `main`: start and finish of the 3-second settling period
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`
