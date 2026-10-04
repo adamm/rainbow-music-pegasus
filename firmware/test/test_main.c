@@ -11,8 +11,8 @@
 
 #define MAX_SAMPLES 256
 
-// The middle of a bin at every frame size: bin 5, 10 or 20.
-#define TONE_HZ 781.25
+// A bin that every board shows, clear of DC.
+#define TONE_BIN 5
 
 // The fake mic.  mic_read_frame() returns heard_mv[], and
 // mic_sensitivity_update() records whether main.c found the frame too loud or
@@ -86,7 +86,7 @@ static void use_board(int leds, int samples)
 {
     _config_total_leds = leds;
     _config_total_samples = samples;
-    fft_init(vReal, vImag, samples, sampling_frequency);
+    fft_init(vReal, vImag, samples, _config_sample_freq_hz);
 }
 
 void setUp(void)
@@ -104,16 +104,13 @@ void tearDown(void)
 }
 
 
-// The mic hears a tone of amplitude_mv around the middle of the ADC's range.
-static void hear_tone(double freq_hz, double amplitude_mv)
+// The mic hears a tone of amplitude_mv, around the middle of the ADC's range,
+// in the middle of FFT bin `bin`.  What frequency that is depends on the
+// board's sample rate, which the signal path doesn't use.
+static void hear_tone(int bin, double amplitude_mv)
 {
     for (int i = 0; i < MAX_SAMPLES; i++)
-        heard_mv[i] = 1650 + (int)lround(amplitude_mv * sin(2 * M_PI * freq_hz * i / CONFIG_MIC_SAMPLE_FREQ_HZ));
-}
-
-static int bin_of(double freq_hz)
-{
-    return (int)lround(freq_hz * N_SAMPLES / CONFIG_MIC_SAMPLE_FREQ_HZ);
+        heard_mv[i] = 1650 + (int)lround(amplitude_mv * sin(2 * M_PI * bin * i / N_SAMPLES));
 }
 
 
@@ -127,25 +124,25 @@ void test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size(void)
 
     for (int i = 0; i < sizeof(boards) / sizeof(boards[0]); i++) {
         use_board(boards[i].leds, boards[i].samples);
-        hear_tone(TONE_HZ, 100);
+        hear_tone(TONE_BIN, 100);
 
         read_spectrum(voltages, vReal, vImag);
 
         char message[32];
         snprintf(message, sizeof(message), "%d-sample frame", boards[i].samples);
-        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(3, 100, vReal[bin_of(TONE_HZ)], message);
+        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(3, 100, vReal[TONE_BIN], message);
     }
 }
 
 
 void test_a_tone_leaves_bins_away_from_it_under_the_noise_floor(void)
 {
-    hear_tone(TONE_HZ, FFT_FULL_SCALE_MV);
+    hear_tone(TONE_BIN, FFT_FULL_SCALE_MV);
 
     read_spectrum(voltages, vReal, vImag);
 
     for (int i = 0; i < N_SAMPLES / 2; i++) {
-        if (abs(i - bin_of(TONE_HZ)) > 3)
+        if (abs(i - TONE_BIN) > 3)
             TEST_ASSERT_LESS_THAN_FLOAT(FFT_NOISE_FLOOR_MV, vReal[i]);
     }
 }
@@ -153,7 +150,7 @@ void test_a_tone_leaves_bins_away_from_it_under_the_noise_floor(void)
 
 void test_silence_is_too_quiet(void)
 {
-    hear_tone(TONE_HZ, 0);
+    hear_tone(TONE_BIN, 0);
 
     read_spectrum(voltages, vReal, vImag);
 
@@ -164,7 +161,7 @@ void test_silence_is_too_quiet(void)
 
 void test_a_tone_over_full_scale_is_too_loud(void)
 {
-    hear_tone(TONE_HZ, FFT_FULL_SCALE_MV * 1.1);
+    hear_tone(TONE_BIN, FFT_FULL_SCALE_MV * 1.1);
 
     read_spectrum(voltages, vReal, vImag);
 
@@ -175,7 +172,7 @@ void test_a_tone_over_full_scale_is_too_loud(void)
 
 void test_a_tone_between_a_quarter_and_full_scale_is_neither(void)
 {
-    hear_tone(TONE_HZ, FFT_FULL_SCALE_MV / 2);
+    hear_tone(TONE_BIN, FFT_FULL_SCALE_MV / 2);
 
     read_spectrum(voltages, vReal, vImag);
 
@@ -186,7 +183,7 @@ void test_a_tone_between_a_quarter_and_full_scale_is_neither(void)
 
 void test_clipping_is_too_loud_even_when_the_bins_are_quiet(void)
 {
-    hear_tone(TONE_HZ, 0);
+    hear_tone(TONE_BIN, 0);
     heard_clipped = true;
 
     read_spectrum(voltages, vReal, vImag);
@@ -197,8 +194,8 @@ void test_clipping_is_too_loud_even_when_the_bins_are_quiet(void)
 
 void test_tones_above_the_highest_led_are_ignored(void)
 {
-    // 10 LEDs show bins 0 to 14, up to about 2.2 kHz.  This is bin 25.
-    hear_tone(3906.25, FFT_FULL_SCALE_MV * 2);
+    // 10 LEDs show bins 0 to 14.
+    hear_tone(25, FFT_FULL_SCALE_MV * 2);
 
     read_spectrum(voltages, vReal, vImag);
 

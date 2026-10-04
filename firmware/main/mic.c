@@ -30,8 +30,8 @@ const static char *TAG = "mic";
 #define MIC_SENSITIVITY_INIT    128  // same as the MCP41050 power-on wiper
 #define MIC_SENSITIVITY_MAX     255
 
-// A frame is at most 25.6 ms (256 samples at 10 kHz), so waiting this long
-// means the ADC has stopped.
+// A frame lasts LEDs * 1.5 / CONFIG_LEDS_TOP_FREQ_HZ, at most 15.4 ms at the
+// default top frequency, so waiting this long means the ADC has stopped.
 #define MIC_READ_TIMEOUT_MS     1000
 
 static bool mic_calibrated = false;
@@ -113,7 +113,7 @@ void mic_calibration_deinit(adc_cali_handle_t handle)
 
 // The ADC samples the mic continuously by DMA, so the sample timing is set by
 // hardware and can't be disturbed by other tasks or interrupts.  Requires
-// config_init() to have been called first to size the frame.
+// config_init() to have been called first to size the frame and set the rate.
 void mic_init(void) {
     uint32_t frame_size = _config_total_samples * SOC_ADC_DIGI_RESULT_BYTES;
 
@@ -136,7 +136,7 @@ void mic_init(void) {
     adc_continuous_config_t adc_config = {
         .pattern_num = 1,
         .adc_pattern = &pattern,
-        .sample_freq_hz = CONFIG_MIC_SAMPLE_FREQ_HZ,
+        .sample_freq_hz = _config_sample_freq_hz,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
         .format = ADC_DIGI_OUTPUT_FORMAT_TYPE2,
     };

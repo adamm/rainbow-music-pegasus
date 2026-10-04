@@ -11,8 +11,14 @@
 #error "Only ESP32C3 is tested/supported. The original ESP32 won't work due to how audio is read. YMMV for other ESP32 models."
 #endif
 #define CONFIG_MIC_ATTEN               ADC_ATTEN_DB_12
-#define CONFIG_MIC_SAMPLE_FREQ_HZ      10000
 #define CONFIG_BATTERY_ATTEN           ADC_ATTEN_DB_12
+
+// The LEDs show 0 Hz up to this frequency whatever their count, shared equally
+// between the pairs, so more LEDs show it in finer steps.  config_init() picks
+// the sample rate to fit.  2344 Hz keeps a 10-LED board sampling at about
+// 10 kHz, as before.  Much above 4 kHz, the mic's anti-aliasing filter (R17 and
+// C41, -3 dB at 4.8 kHz) dims the highest LEDs.
+#define CONFIG_LEDS_TOP_FREQ_HZ        2344
 
 #define CONFIG_GPIO_RGB_DATA           3
 
@@ -29,5 +35,6 @@
 
 extern uint8_t _config_total_leds;
 extern uint16_t _config_total_samples;
+extern uint32_t _config_sample_freq_hz;
 
 void config_init();

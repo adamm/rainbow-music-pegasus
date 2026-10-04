@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "fake_idf.h"
+#include "soc/soc_caps.h"
 #include "unity.h"
 
 #define JP5 CONFIG_GPIO_TOTAL_LEDS_ADD_8
@@ -70,10 +71,58 @@ void test_jumpers_set_the_led_count_and_fft_size(void)
 }
 
 
+// Run config_init() on a fresh board with the LED-count jumpers set by the
+// bits of `closed`: JP7 adds 2 LEDs, JP6 4 and JP5 8.
+static void boot_with_jumpers(int closed)
+{
+    fake_idf_reset();
+    fake.gpio_level[JP7] = !(closed & 1);
+    fake.gpio_level[JP6] = !(closed & 2);
+    fake.gpio_level[JP5] = !(closed & 4);
+
+    config_init();
+}
+
+
+// So more LEDs split the same range more finely, rather than showing a
+// different range.
+void test_every_board_shows_0_hz_to_the_top_frequency(void)
+{
+    for (int closed = 0; closed < 8; closed++) {
+        boot_with_jumpers(closed);
+
+        // The LEDs show the lowest LEDs * 3 / 2 bins, each sample rate / FFT
+        // size wide.
+        float top_hz = (_config_total_leds * 3 / 2) * (float)_config_sample_freq_hz / _config_total_samples;
+
+        char message[16];
+        snprintf(message, sizeof(message), "%d LEDs", _config_total_leds);
+        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(1, CONFIG_LEDS_TOP_FREQ_HZ, top_hz, message);
+    }
+}
+
+
+// Otherwise adc_continuous_config() refuses the rate, and the board reboots
+// over and over.
+void test_every_board_samples_within_the_adcs_range(void)
+{
+    for (int closed = 0; closed < 8; closed++) {
+        boot_with_jumpers(closed);
+
+        char message[16];
+        snprintf(message, sizeof(message), "%d LEDs", _config_total_leds);
+        TEST_ASSERT_LESS_OR_EQUAL_UINT32_MESSAGE(SOC_ADC_SAMPLE_FREQ_THRES_HIGH, _config_sample_freq_hz, message);
+        TEST_ASSERT_GREATER_OR_EQUAL_UINT32_MESSAGE(SOC_ADC_SAMPLE_FREQ_THRES_LOW, _config_sample_freq_hz, message);
+    }
+}
+
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_jumper_pins_are_inputs_with_pull_ups);
     RUN_TEST(test_jumpers_set_the_led_count_and_fft_size);
+    RUN_TEST(test_every_board_shows_0_hz_to_the_top_frequency);
+    RUN_TEST(test_every_board_samples_within_the_adcs_range);
     return UNITY_END();
 }

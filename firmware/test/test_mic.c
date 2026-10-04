@@ -8,6 +8,7 @@
 #include "unity.h"
 
 #define FRAME_SAMPLES   64
+#define SAMPLE_FREQ_HZ  12500
 #define MIC             CONFIG_MIC_CHANNEL
 
 static int64_t start_us;
@@ -24,6 +25,7 @@ static void boot(void)
     fake.adc_running = false;
 
     _config_total_samples = FRAME_SAMPLES;
+    _config_sample_freq_hz = SAMPLE_FREQ_HZ;
     digipot_init();
     mic_init();
 }
@@ -58,10 +60,10 @@ static void frame_at(int64_t t_us, frame_t frame)
 }
 
 
-void test_init_samples_the_mic_at_10khz_keeping_only_the_newest_frame(void)
+void test_init_samples_the_mic_at_the_configured_rate_keeping_only_the_newest_frame(void)
 {
     TEST_ASSERT_TRUE(fake.adc_running);
-    TEST_ASSERT_EQUAL(10000, fake.adc_config.sample_freq_hz);
+    TEST_ASSERT_EQUAL(SAMPLE_FREQ_HZ, fake.adc_config.sample_freq_hz);
     TEST_ASSERT_EQUAL(ADC_UNIT_1, fake.adc_pattern.unit);
     TEST_ASSERT_EQUAL(ADC_CHANNEL_4, fake.adc_pattern.channel);  // GPIO 4
     TEST_ASSERT_EQUAL(ADC_ATTEN_DB_12, fake.adc_pattern.atten);
@@ -280,7 +282,7 @@ void test_sensitivity_tops_out_at_255(void)
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_init_samples_the_mic_at_10khz_keeping_only_the_newest_frame);
+    RUN_TEST(test_init_samples_the_mic_at_the_configured_rate_keeping_only_the_newest_frame);
     RUN_TEST(test_read_frame_returns_each_sample_in_mv);
     RUN_TEST(test_read_frame_skips_results_from_other_channels);
     RUN_TEST(test_read_frame_keeps_reading_until_the_frame_is_full);

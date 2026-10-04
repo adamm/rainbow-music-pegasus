@@ -55,7 +55,7 @@ doesn't support them.
 ## How it works
 
 1. **Configure** (`config.c`): read jumpers JP5–JP7 to decide how many LEDs
-   are fitted, and pick the FFT size from that.
+   are fitted, and pick the FFT size and sample rate from that.
 2. **Battery** (`battery.c`): take a first battery reading while the LEDs
    are still dark.
 3. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
@@ -65,11 +65,12 @@ doesn't support them.
    fixed noise floor, apply a peak-and-decay filter, and send the bins to the
    LEDs.  Every 10 seconds, check the battery.
 
-The ADC samples the mic at 10 kHz in continuous (DMA) mode, so the sample
-timing is set by hardware, not software delays, and other tasks such Bluetooth
-can't disturb it.  The driver keeps only the newest frame: if the FFT and LED
-update fall behind, older frames are dropped, so the lights never lag the sound
-by more than one frame (6.4 ms for 64 samples, 25.6 ms for 256).
+The ADC samples the mic in continuous (DMA) mode, at a rate set by the LED
+count (see [Frequency range](#frequency-range)), so the sample timing is set
+by hardware, not software delays, and other tasks such Bluetooth can't disturb
+it.  The driver keeps only the newest frame: if the FFT and LED update fall
+behind, older frames are dropped, so the lights never lag the sound by more
+than one frame (6.4 ms with 10 LEDs, up to 15.4 ms with 24).
 
 LEDs are driven in left/right pairs.  Each group of three FFT bins becomes
 one colour; the right wing gets it as GRB and the left wing with the channels
@@ -88,6 +89,42 @@ adds LEDs on top of the base 10:
 
 The total is capped at 24.  The FFT size follows the LED count: 64 samples
 for up to 10 LEDs, 128 for up to 16, and 256 above that.
+
+## Frequency range
+
+Every board shows the same range, from 0 Hz up to `CONFIG_LEDS_TOP_FREQ_HZ`
+(2344 Hz) in [`main/config.h`](main/config.h).  It's shared equally between
+the LED pairs, so more LEDs show it in finer steps.
+
+Each pair shows three FFT bins, one per colour channel, so the LEDs show the
+lowest LEDs * 3 / 2 bins.  A bin is the sample rate divided by the FFT size
+wide, so `config_init()` picks the sample rate that makes those bins end at the
+top frequency:
+
+    sample rate = FFT size * top frequency / (LEDs * 3 / 2)
+
+| LEDs | FFT size | Sample rate | Each pair shows | Frame   |
+|------|----------|-------------|-----------------|---------|
+| 10   | 64       | 10.0 kHz    | 469 Hz          | 6.4 ms  |
+| 12   | 128      | 16.7 kHz    | 391 Hz          | 7.7 ms  |
+| 14   | 128      | 14.3 kHz    | 335 Hz          | 9.0 ms  |
+| 16   | 128      | 12.5 kHz    | 293 Hz          | 10.2 ms |
+| 18   | 256      | 22.2 kHz    | 260 Hz          | 11.5 ms |
+| 20   | 256      | 20.0 kHz    | 234 Hz          | 12.8 ms |
+| 22   | 256      | 18.2 kHz    | 213 Hz          | 14.1 ms |
+| 24   | 256      | 16.7 kHz    | 195 Hz          | 15.4 ms |
+
+The sample rate is always more than four times the top frequency.  Sound
+above half the sample rate folds back onto lower bins, and the mic's
+anti-aliasing filters (R17 and C41 at 4.8 kHz, R9 and C38 at 10.6 kHz) cut
+cymbals and other treble near 10 kHz by only about 10 dB.  A faster rate
+folds back only higher sound, which the filters cut more.
+
+Raise the top frequency to show more of the treble, or lower it to show more
+detail in the bass.  Much above 4 kHz, the anti-aliasing filter dims the
+highest LEDs.  The ADC can't sample faster than 83.3 kHz, which an 18-LED
+board reaches at a top frequency of about 8.8 kHz.  The unit tests fail if any
+board would need a rate outside the ADC's range.
 
 ## Pin map (ESP32-C3)
 
@@ -112,7 +149,7 @@ All pins are defined in [`main/config.h`](main/config.h).
 | File                  | Purpose |
 |-----------------------|---------|
 | `main.c`              | Startup and the main sample → FFT → LED loop |
-| `config.c/h`          | Pin assignments and jumper-based LED count |
+| `config.c/h`          | Pin assignments, jumper-based LED count, FFT size, sample rate and top frequency |
 | `mic.c/h`             | Continuous (DMA) sampling of the microphone, with ADC calibration, and automatic mic sensitivity |
 | `battery.c/h`         | Battery voltage readings, smoothing, and the low-battery decision |
 | `fft.c/h`             | FFT, windowing and magnitude (C port of arduinoFFT, GPL-3.0) |
@@ -155,7 +192,7 @@ The mic and the battery are both on ADC1, which can sample continuously or
 take oneshot readings but not both at once.  So `main.c` takes the first
 reading at power-on, before the mic starts.  After that, every 10 seconds it
 pauses the mic (`mic_pause()`), reads the battery and resumes the mic
-(`mic_resume()`).  This delays the next frame by at most a frame (25.6 ms).
+(`mic_resume()`).  This delays the next frame by at most a frame (15.4 ms).
 
 The voltage dips with the music as the LEDs draw current, so readings are
 smoothed.  The smoothed voltage moves about two thirds of the way to a new

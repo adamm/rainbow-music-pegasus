@@ -52,9 +52,6 @@ const static char *TAG = "main";
 // next frame by up to a frame, which is too brief and rare to notice.
 #define BATTERY_CHECK_US 10000000
 
-double sampling_frequency = CONFIG_MIC_SAMPLE_FREQ_HZ;
-float sampling_time = 0.0128; // N_SAMPLES / sampling_frequency;
-
 
 // Sample one frame from the mic and replace vReal with its FFT bins in mV.
 // Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
@@ -145,7 +142,7 @@ void app_main(void)
     mic_init();
     leds_init();
     leds_scanning_start();
-    fft_init(vReal, vImag, N_SAMPLES, sampling_frequency);
+    fft_init(vReal, vImag, N_SAMPLES, _config_sample_freq_hz);
 
     uint64_t start_settle_time = esp_timer_get_time();
 

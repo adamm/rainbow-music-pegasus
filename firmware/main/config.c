@@ -8,6 +8,7 @@ const static char *TAG = "config";
 
 uint8_t _config_total_leds = 0;
 uint16_t _config_total_samples = 0;
+uint32_t _config_sample_freq_hz = 0;
 
 void config_init() {
     // Set the total number of leds configured by looking at the jumpers JP5, JP6, JP7. 
@@ -49,6 +50,13 @@ void config_init() {
     else
         _config_total_samples = 256;
 
+    // Each pair of LEDs shows three FFT bins, and each bin is the sample rate
+    // divided by the FFT size wide.  Pick the sample rate that makes the shown
+    // bins end at the top frequency, so every board shows the same range.
+    uint32_t displayed_bins = _config_total_leds * 3 / 2;
+    _config_sample_freq_hz = ((uint32_t)_config_total_samples * CONFIG_LEDS_TOP_FREQ_HZ + displayed_bins / 2) / displayed_bins;
+
     ESP_LOGI(TAG, "Total LEDs configured is %d", _config_total_leds);
     ESP_LOGI(TAG, "Total samples configured is %d", _config_total_samples);
+    ESP_LOGI(TAG, "Sampling at %d Hz to show 0 to %d Hz", (int)_config_sample_freq_hz, CONFIG_LEDS_TOP_FREQ_HZ);
 }
