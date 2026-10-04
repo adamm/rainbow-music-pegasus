@@ -51,12 +51,12 @@ static int wiper(void)
 typedef enum { NORMAL, LOUD, QUIET, LOUD_AND_QUIET } frame_t;
 
 // Report a frame to mic_sensitivity_update(), as main.c does after each FFT,
-// t_us into the test.
-static void frame_at(int64_t t_us, frame_t frame)
+// t_us into the test.  Returns the gain change it reports back.
+static float frame_at(int64_t t_us, frame_t frame)
 {
     fake.now_us = start_us + t_us;
-    mic_sensitivity_update(frame == LOUD || frame == LOUD_AND_QUIET,
-                           frame == QUIET || frame == LOUD_AND_QUIET);
+    return mic_sensitivity_update(frame == LOUD || frame == LOUD_AND_QUIET,
+                                  frame == QUIET || frame == LOUD_AND_QUIET);
 }
 
 
@@ -279,6 +279,38 @@ void test_sensitivity_tops_out_at_255(void)
 }
 
 
+// So main.c can rescale the floor it has learned to the new gain.
+void test_update_reports_the_gain_change_of_each_step(void)
+{
+    TEST_ASSERT_EQUAL_FLOAT(1, frame_at(0, LOUD));
+    TEST_ASSERT_EQUAL_FLOAT(1, frame_at(MIC_LOUD_HOLD_US - 1, LOUD));
+    TEST_ASSERT_FLOAT_WITHIN(0.002f, 0.75f, frame_at(MIC_LOUD_HOLD_US, LOUD));        // 128 -> 96
+
+    int64_t t = 2 * MIC_LOUD_HOLD_US;
+    TEST_ASSERT_EQUAL_FLOAT(1, frame_at(t, QUIET));
+    TEST_ASSERT_FLOAT_WITHIN(0.002f, 1.125f, frame_at(t + MIC_QUIET_HOLD_US, QUIET));  // 96 -> 108
+}
+
+
+// The wiper's own resistance keeps the gain above 0.
+void test_the_gain_change_to_and_from_sensitivity_0_is_finite(void)
+{
+    int64_t t = 0;
+    float to_0 = 1;
+    for (int i = 0; i < 40 && wiper() > 0; i++, t += MIC_LOUD_HOLD_US)
+        to_0 = frame_at(t, LOUD);
+    TEST_ASSERT_EQUAL(0, wiper());
+
+    frame_at(t, QUIET);
+    float from_0 = frame_at(t + MIC_QUIET_HOLD_US, QUIET);
+    TEST_ASSERT_EQUAL(1, wiper());
+
+    TEST_ASSERT_GREATER_THAN_FLOAT(0, to_0);
+    TEST_ASSERT_FLOAT_IS_NOT_INF(from_0);
+    TEST_ASSERT_FLOAT_WITHIN(0.0001f, 1, to_0 * from_0);
+}
+
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -298,5 +330,7 @@ int main(void)
     RUN_TEST(test_loud_wins_over_quiet);
     RUN_TEST(test_sensitivity_bottoms_out_at_0_then_climbs_back);
     RUN_TEST(test_sensitivity_tops_out_at_255);
+    RUN_TEST(test_update_reports_the_gain_change_of_each_step);
+    RUN_TEST(test_the_gain_change_to_and_from_sensitivity_0_is_finite);
     return UNITY_END();
 }

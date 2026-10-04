@@ -29,6 +29,10 @@ const static char *TAG = "mic";
 // Code 00h puts the wiper at terminal B, so a higher code means higher gain.
 #define MIC_SENSITIVITY_INIT    128  // same as the MCP41050 power-on wiper
 #define MIC_SENSITIVITY_MAX     255
+// The B-W resistance is the wiper code's share of 50 kOhm plus the wiper's own
+// resistance, about 70 Ohm at 3.3 V, which is a third of a code.  It keeps the
+// gain above 0 at code 0.
+#define MIC_WIPER_RESISTANCE_CODES  0.35f
 
 // A frame lasts LEDs * 1.5 / CONFIG_LEDS_TOP_FREQ_HZ, at most 15.4 ms at the
 // default top frequency, so waiting this long means the ADC has stopped.
@@ -198,12 +202,21 @@ bool mic_read_frame(int* voltages, int total_samples) {
 }
 
 
+// The preamp gain, in arbitrary units, at a sensitivity.
+static float mic_gain(int sensitivity) {
+    return sensitivity + MIC_WIPER_RESISTANCE_CODES;
+}
+
+
 // Called once per frame with whether that frame was too loud or too quiet.
 // Progressively lowers the preamp gain while frames keep being too loud, and
 // raises it while they stay too quiet.  Loud is stepped down faster (~2.5 dB)
 // than quiet is stepped up (~1 dB).  Steps are proportional to the current
 // sensitivity so each one is roughly the same number of dB.
-void mic_sensitivity_update(bool loud, bool quiet) {
+//
+// Returns the new gain divided by the old, 1 if it didn't change, so the
+// caller can rescale levels it has learned from earlier frames.
+float mic_sensitivity_update(bool loud, bool quiet) {
     static int64_t loud_since = 0;
     static int64_t quiet_since = 0;
     int64_t now = esp_timer_get_time();
@@ -233,6 +246,8 @@ void mic_sensitivity_update(bool loud, bool quiet) {
         if (mic_sensitivity != old)
             ESP_LOGI(TAG, "too quiet, sensitivity %d -> %d", old, mic_sensitivity);
     }
+
+    return mic_gain(mic_sensitivity) / mic_gain(old);
 }
 
 

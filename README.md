@@ -97,12 +97,21 @@ jumpers and how the audio pipeline works.
 
 ## Mic sensitivity
 
-The microphone's sensitivity adjusts automatically.  If the sound is too quiet
-it is turned up, and if it is so loud the wings stay at full brightness it is
-turned down.  For
-3 seconds after power-on, the wings will appear to "flap" in white while the
-sensitivity settles to the room.  When the device is moved between quiet and
-loud environments, it takes a few seconds to catch up.
+The microphone's sensitivity adjusts automatically.  If the sound is too
+quiet it is turned up, and if it is so loud the wings stay at full
+brightness it is turned down.  For 3 seconds after power-on, the wings will
+appear to "flap" in white while the sensitivity settles to the room.  When
+the device is moved between quiet and loud environments, it takes a few
+seconds to catch up.
+
+## Noisy rooms
+
+The wings can show music over the sound of a crowd talking.  The pegasus keeps
+learning each room's background sound, and lights up only for sound well
+above it, such as the music's beats.  It follows a crowd as it gets louder
+or quieter over several seconds.  Anything that holds steady, like a long
+note, is learned too and fades away after about 20 seconds.  The music has
+to be louder than the crowd, at least on its beats, to show.
 
 ## Set Mode
 

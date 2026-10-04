@@ -59,11 +59,13 @@ doesn't support them.
 2. **Battery** (`battery.c`): take a first battery reading while the LEDs
    are still dark.
 3. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
-   on the wings while the mic sensitivity adjusts to the room.
+   on the wings while the mic sensitivity and the background floor adjust to
+   the room.
 4. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
-   apply a Blackman window and FFT, adjust the mic sensitivity, subtract a
-   fixed noise floor, apply a peak-and-decay filter, and send the bins to the
-   LEDs.  Every 10 seconds, check the battery.
+   apply a Blackman window and FFT, adjust the mic sensitivity, learn each
+   bin's background floor and keep only the sound well above it, apply a
+   peak-and-decay filter, and send the bins to the LEDs.  Every 10 seconds,
+   check the battery.
 
 The ADC samples the mic in continuous (DMA) mode, at a rate set by the LED
 count (see [Frequency range](#frequency-range)), so the sample timing is set
@@ -177,10 +179,49 @@ The steps repeat while the condition lasts, so after moving to a louder or
 quieter room the lights recover within a few seconds.
 
 Each FFT bin is converted to millivolts at the ADC, so the LEDs behave the same
-whatever the frame size.  The brightness range is set by `FFT_NOISE_FLOOR_MV`
-and `FFT_FULL_SCALE_MV` in `main.c`.  Raising full scale makes the sensitivity
-settle higher, using more of the ADC's range, as long as the signal doesn't
-clip.  The clipping limits and hold times are `#define`s at the top of `mic.c`.
+whatever the frame size.  Bins under `FFT_NOISE_FLOOR_MV` in `main.c` are
+always dark, and bins at `FFT_FULL_SCALE_MV` light at full brightness.
+Raising full scale makes the sensitivity settle higher, using more of the
+ADC's range, as long as the signal doesn't clip.  The clipping limits and hold
+times are `#define`s at the top of `mic.c`.
+
+## Background sound
+
+To show music over a noisy room, such as a crowd talking, `main.c` learns the
+level of each FFT bin's background sound, its floor, and lights a bin only
+once it's 12 dB (4 times) over that.  The floor is learned all the time,
+and follows a crowd as it grows or thins.
+
+- While a bin is louder than its floor, the floor rises by 1 dB a second.
+  While it's quieter, the floor falls by 3 dB a second.  So the floor settles
+  where the bin is quieter than it a quarter of the time.
+- A crowd never goes quiet, so the floor sits on it.  Beats are loud for much
+  less than three quarters of the time, so the floor stays under them and
+  they stand out.
+- Noise in a bin jumps around from frame to frame, and gets 12 dB over its
+  quietest quarter in 1 to 2% of frames.  So a steady crowd still lights an
+  LED dimly now and then.
+- Anything that doesn't change is learned too, so a note held 20 dB over the
+  threshold fades out in about 20 seconds.  The light show follows beats and
+  changes more than steady sound.
+- A bin's brightness runs from its threshold up to full scale, so music over
+  a noisy room can still reach full brightness.  Beats 12 dB over a crowd's
+  average level show at about a quarter of full brightness.
+- In a quiet room the floor falls until the threshold is `FFT_NOISE_FLOOR_MV`,
+  and stops there, so hiss stays dark and a new crowd is learned from there.
+- During the 3-second settling period the floor learns 15 times faster, so it
+  can climb 45 dB and the light show starts with the room already learned.
+- When the mic sensitivity changes, `mic_sensitivity_update()` returns the
+  change in gain, and the floor is scaled by it to stay in step with the
+  sound.
+
+Music has to be louder than the crowd, at least on its beats, to show: with
+one microphone, sound no louder than the crowd can't be told apart from it.
+Someone talking right next to the pegasus isn't learned either, because
+speech has pauses.
+
+The rates, margin and speed-up are the `FLOOR_` `#define`s at the top of
+`main.c`.
 
 ## Battery level
 
@@ -230,5 +271,9 @@ Useful messages appear in the serial monitor:
 - `config`: which jumpers are closed, the LED count and the FFT size
 - `battery`: each reading, e.g. `3712 mV, smoothed 3698 mV`, and when the
   battery becomes low or stops being low
-- `main`: start and finish of the 3-second settling period
+- `main`: start and finish of the 3-second settling period, and each second,
+  how many of the shown bins' background floors went up or down by more than
+  0.5 dB, e.g. `adjusted the floor up on 3 bins and down on 1, of 15`.  Gain
+  changes aren't counted, since `mic` logs those.  In a steady room most bins
+  stay put; when a crowd grows or a note is held, they go up.
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`

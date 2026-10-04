@@ -1,9 +1,11 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "driver/rmt_tx.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_adc/adc_oneshot.h"
+#include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/task.h"
 #include "led_strip_encoder.h"
@@ -30,6 +32,19 @@ void fake_idf_reset(void)
 
     fake.adc_read_chunk = FAKE_ADC_MAX_RESULTS;
     fake.adc_cali_in_efuse = true;
+}
+
+
+void fake_esp_log(const char *tag, const char *format, ...)
+{
+    int n = snprintf(fake.last_log, sizeof(fake.last_log), "%s: ", tag);
+    if (n < 0 || n >= (int)sizeof(fake.last_log))
+        return;
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(fake.last_log + n, sizeof(fake.last_log) - n, format, args);
+    va_end(args);
 }
 
 

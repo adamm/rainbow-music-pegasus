@@ -15,10 +15,14 @@
 #define FAKE_ADC_MAX_RESULTS    1024
 #define FAKE_ADC_CHANNELS       8
 #define FAKE_RMT_MAX_BYTES      256
+#define FAKE_LOG_MAX_BYTES      256
 
 typedef struct {
     // What esp_timer_get_time() returns.
     int64_t now_us;
+
+    // The last line logged, as "TAG: message", or "" if nothing has been.
+    char last_log[FAKE_LOG_MAX_BYTES];
 
     // gpio_get_level() reads gpio_level[], which is all high, as if pulled
     // up, until a test pulls a pin low.
