@@ -41,13 +41,20 @@ typedef struct {
     adc_digi_pattern_config_t adc_pattern;
     bool adc_running;
 
+    // The callbacks registered for the ADC's interrupt.  fake_adc_drop_frame()
+    // calls on_pool_ovf.
+    adc_continuous_evt_cbs_t adc_callbacks;
+    void *adc_callbacks_user_data;
+
     // adc_continuous_read() hands out the results queued by fake_adc_queue()
     // in order, at most adc_read_chunk per call, and times out once they run
-    // out.  adc_read counts the results handed out so far.
+    // out.  adc_read counts the results handed out so far.  Each call waits
+    // adc_read_wait_us for them, moving now_us on.
     adc_digi_output_data_t adc_results[FAKE_ADC_MAX_RESULTS];
     int adc_queued;
     int adc_read;
     int adc_read_chunk;
+    int64_t adc_read_wait_us;
 
     // How the ADC was set up for oneshot readings.  adc_oneshot_read() returns
     // adc_oneshot_raw[] for the channel it reads, but like the real driver, it
@@ -78,3 +85,7 @@ void fake_idf_reset(void);
 
 // Queue one conversion result for adc_continuous_read() to hand out.
 void fake_adc_queue(adc_channel_t channel, int raw);
+
+// Finish a frame while the last is still unread, so the driver drops one and
+// calls the on_pool_ovf callback, as its interrupt does.
+void fake_adc_drop_frame(void);

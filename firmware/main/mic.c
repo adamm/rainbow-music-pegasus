@@ -44,6 +44,10 @@ adc_continuous_handle_t mic_handle;
 adc_cali_handle_t mic_cali_channel_handle = NULL;
 static uint8_t* mic_frame = NULL;
 static int mic_sensitivity = 0;
+// Since mic_init(), how many frames the driver dropped because the last one
+// was still unread, and how long mic_read_frame() has waited for samples.
+static volatile uint32_t mic_dropped_frames = 0;
+static int64_t mic_waited_us = 0;
 
 
 static void mic_sensitivity_set(int sensitivity) {
@@ -116,6 +120,14 @@ void mic_calibration_deinit(adc_cali_handle_t handle)
 }
 
 
+// Called from the ADC's interrupt when a frame finishes while the last one is
+// still unread.  flush_pool drops the unread one.
+static bool mic_on_pool_overflow(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data) {
+    mic_dropped_frames++;
+    return false;
+}
+
+
 // The ADC samples the mic continuously by DMA, so the sample timing is set by
 // hardware and can't be disturbed by other tasks or interrupts.  Requires
 // config_init() to have been called first to size the frame and set the rate.
@@ -146,6 +158,11 @@ void mic_init(void) {
         .format = ADC_DIGI_OUTPUT_FORMAT_TYPE2,
     };
     ESP_ERROR_CHECK(adc_continuous_config(mic_handle, &adc_config));
+
+    adc_continuous_evt_cbs_t callbacks = {
+        .on_pool_ovf = mic_on_pool_overflow,
+    };
+    ESP_ERROR_CHECK(adc_continuous_register_event_callbacks(mic_handle, &callbacks, NULL));
 
     mic_frame = malloc(frame_size);
     assert(mic_frame);
@@ -184,7 +201,9 @@ bool mic_read_frame(int* voltages, int total_samples) {
         uint32_t wanted = (total_samples - n) * SOC_ADC_DIGI_RESULT_BYTES;
 
         // The driver can return part of a frame, so keep reading until it's full.
+        int64_t start = esp_timer_get_time();
         ESP_ERROR_CHECK(adc_continuous_read(mic_handle, mic_frame, wanted, &length, MIC_READ_TIMEOUT_MS));
+        mic_waited_us += esp_timer_get_time() - start;
 
         for (uint32_t i = 0; i < length; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t* result = (adc_digi_output_data_t*)&mic_frame[i];
@@ -200,6 +219,19 @@ bool mic_read_frame(int* voltages, int total_samples) {
     }
 
     return clipped;
+}
+
+
+// How many frames the driver has dropped since mic_init() because the one
+// before was still unread, so the LEDs never saw that sound.
+uint32_t mic_frames_dropped(void) {
+    return mic_dropped_frames;
+}
+
+
+// How long mic_read_frame() has waited for samples since mic_init(), in µs.
+int64_t mic_time_waited_us(void) {
+    return mic_waited_us;
 }
 
 

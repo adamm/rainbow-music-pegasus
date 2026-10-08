@@ -61,6 +61,16 @@ void fake_adc_queue(adc_channel_t channel, int raw)
 }
 
 
+void fake_adc_drop_frame(void)
+{
+    TEST_ASSERT_TRUE_MESSAGE(fake.adc_running, "The ADC isn't sampling");
+    TEST_ASSERT_TRUE_MESSAGE(fake.adc_callbacks.on_pool_ovf != NULL, "No on_pool_ovf callback registered");
+
+    adc_continuous_evt_data_t edata = { 0 };
+    fake.adc_callbacks.on_pool_ovf((adc_continuous_handle_t)&handle, &edata, fake.adc_callbacks_user_data);
+}
+
+
 void fake_esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
 {
     static char message[256];
@@ -145,6 +155,17 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t adc, const adc_continuou
     return ESP_OK;
 }
 
+esp_err_t adc_continuous_register_event_callbacks(adc_continuous_handle_t adc, const adc_continuous_evt_cbs_t *cbs, void *user_data)
+{
+    // Like the real driver, only before sampling starts.
+    if (fake.adc_running)
+        return ESP_ERR_INVALID_STATE;
+
+    fake.adc_callbacks = *cbs;
+    fake.adc_callbacks_user_data = user_data;
+    return ESP_OK;
+}
+
 esp_err_t adc_continuous_start(adc_continuous_handle_t adc)
 {
     if (fake.adc_running)
@@ -160,6 +181,7 @@ esp_err_t adc_continuous_read(adc_continuous_handle_t adc, uint8_t *buf, uint32_
     if (!fake.adc_running)
         return ESP_ERR_INVALID_STATE;
 
+    fake.now_us += fake.adc_read_wait_us;
     int count = 0;
     while (fake.adc_read < fake.adc_queued
            && count < fake.adc_read_chunk

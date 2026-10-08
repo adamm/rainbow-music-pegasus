@@ -315,4 +315,13 @@ Useful messages appear in the serial monitor:
   0.5 dB, e.g. `adjusted the floor up on 3 bins and down on 1, of 15`.  Gain
   changes aren't counted, since `mic` logs those.  In a steady room most bins
   stay put; when a crowd grows or a note is held, they go up.
+- `main`, each second of the light show: how many frames it processed and how
+  long each lasts, how many the mic dropped because the frame before was still
+  being processed, and how long a frame took to process, on average and at
+  most.  The average is split into steps: reading the samples (converting them
+  to mV, not waiting for them), the window (with removing DC), the FFT, the
+  magnitudes, and the rest (the floor, the colours, sending them to the LEDs,
+  the battery check and logging).  The light show keeps up while a frame takes
+  less time to process than to record.  Once it doesn't, the mic drops frames,
+  and the LEDs miss that sound.
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`

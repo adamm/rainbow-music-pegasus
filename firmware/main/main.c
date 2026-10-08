@@ -80,9 +80,39 @@ const static char *TAG = "main";
 // next frame by up to a frame, which is too brief and rare to notice.
 #define BATTERY_CHECK_US 10000000
 
+// How often to log how long the light show takes to process a frame, and how
+// many frames the mic dropped because the one before was still being
+// processed.  The loop keeps up while processing a frame takes less time than
+// recording one.
+#define FRAME_LOG_US         1000000
+
 // Each shown bin's floor at the last floor log, and when that was, 0 for never.
 static float floor_logged[CONFIG_MAX_LEDS * 3];
 static int64_t floor_logged_us = 0;
+
+// The time spent on each step of the frames since the last frame log, in µs.
+static struct {
+    int frames;
+    int64_t read_us;       // converting samples to mV, not waiting for them
+    int64_t window_us;     // removing DC and applying the window
+    int64_t fft_us;
+    int64_t magnitude_us;
+    int64_t busy_us;       // the whole frame, except waiting for samples
+    int64_t max_busy_us;
+    int64_t frame_end_us;  // when the last frame ended
+    int64_t waited_us;     // mic_time_waited_us() then
+    uint32_t dropped;      // mic_frames_dropped() at the last log
+    int64_t logged_us;
+} frame_stats;
+
+
+// Add the time since *since to *total_us, and move *since on to now.
+static void time_step(int64_t* total_us, int64_t* since)
+{
+    int64_t now = esp_timer_get_time();
+    *total_us += now - *since;
+    *since = now;
+}
 
 
 // Sample one frame from the mic and replace vReal with its FFT bins in mV.
@@ -94,19 +124,26 @@ static int64_t floor_logged_us = 0;
 static float read_spectrum(int* voltages, float* vReal, float* vImag)
 {
     float peak = 0;
+    int64_t step_start = esp_timer_get_time();
+    int64_t waited = mic_time_waited_us();
     bool clipped = mic_read_frame(voltages, N_SAMPLES);
+    frame_stats.read_us -= mic_time_waited_us() - waited;
 
     for (int i = 0; i < N_SAMPLES; i++) {
         vReal[i] = (float)(voltages[i] - 1650);
         vImag[i] = 0;
     }
+    time_step(&frame_stats.read_us, &step_start);
 
     // ESP_LOGI(TAG, "raw");
     // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
     fft_dcRemoval();
     fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
+    time_step(&frame_stats.window_us, &step_start);
     fft_compute(FFT_FORWARD);
+    time_step(&frame_stats.fft_us, &step_start);
     fft_complexToMagnitude();
+    time_step(&frame_stats.magnitude_us, &step_start);
 
     for (int i = 0; i < N_SAMPLES; i++) {
         vReal[i] /= N_SAMPLES / 2 * FFT_WINDOW_GAIN;
@@ -161,6 +198,58 @@ static void log_floor(const float* vFloor, float gain_change, int64_t now)
 
     memcpy(floor_logged, vFloor, N_DISPLAYED_BINS * sizeof(float));
     floor_logged_us = now;
+}
+
+
+// Start timing the light show's frames, from `now`.
+static void start_frame_log(int64_t now)
+{
+    memset(&frame_stats, 0, sizeof(frame_stats));
+    frame_stats.frame_end_us = now;
+    frame_stats.waited_us = mic_time_waited_us();
+    frame_stats.dropped = mic_frames_dropped();
+    frame_stats.logged_us = now;
+}
+
+
+// The average of total_us over the frames since the last frame log, in ms.
+static float ms_per_frame(int64_t total_us)
+{
+    return total_us / 1000.0f / frame_stats.frames;
+}
+
+
+// Count a frame of the light show that ended at `now`.  Every FRAME_LOG_US,
+// log how long frames took to process, step by step, and how many the mic
+// dropped.  The rest is the floor, the colours, sending them to the LEDs, the
+// battery check and logging.
+static void log_frames(int64_t now)
+{
+    int64_t waited = mic_time_waited_us();
+    int64_t busy = now - frame_stats.frame_end_us - (waited - frame_stats.waited_us);
+
+    frame_stats.frames++;
+    frame_stats.busy_us += busy;
+    if (busy > frame_stats.max_busy_us)
+        frame_stats.max_busy_us = busy;
+    frame_stats.frame_end_us = now;
+    frame_stats.waited_us = waited;
+
+    if (now - frame_stats.logged_us < FRAME_LOG_US)
+        return;
+
+    uint32_t dropped = mic_frames_dropped();
+    int64_t steps_us = frame_stats.read_us + frame_stats.window_us + frame_stats.fft_us + frame_stats.magnitude_us;
+    ESP_LOGI(TAG, "%d frames of %.1f ms, %d dropped, %.1f ms busy each (max %.1f): "
+             "read %.1f, window %.1f, FFT %.1f, magnitude %.1f, rest %.1f",
+             frame_stats.frames, N_SAMPLES * 1000.0f / _config_sample_freq_hz,
+             (int)(dropped - frame_stats.dropped),
+             ms_per_frame(frame_stats.busy_us), frame_stats.max_busy_us / 1000.0f,
+             ms_per_frame(frame_stats.read_us), ms_per_frame(frame_stats.window_us),
+             ms_per_frame(frame_stats.fft_us), ms_per_frame(frame_stats.magnitude_us),
+             ms_per_frame(frame_stats.busy_us - steps_us));
+
+    start_frame_log(now);
 }
 
 
@@ -251,6 +340,7 @@ void app_main(void)
 
     // Begin light show
     int64_t last_battery_time = esp_timer_get_time();
+    start_frame_log(last_battery_time);
     while (1) {
         float gain_change = read_spectrum(voltages, vReal, vImag);
 
@@ -281,6 +371,8 @@ void app_main(void)
             read_battery();
             last_battery_time = now;
         }
+
+        log_frames(esp_timer_get_time());
     }
 
     mic_stop();

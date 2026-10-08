@@ -22,6 +22,8 @@ static void boot(void)
     mic_cali_channel_handle = NULL;
     mic_sensitivity = 0;
     mic_sensitivity_update(false, false);  // clears its hold timers
+    mic_dropped_frames = 0;
+    mic_waited_us = 0;
     fake.adc_running = false;
 
     _config_total_samples = FRAME_SAMPLES;
@@ -129,6 +131,37 @@ void test_read_frame_reads_no_further_than_the_frame(void)
 
     TEST_ASSERT_EQUAL(-1, mv[FRAME_SAMPLES]);
     TEST_ASSERT_EQUAL(1 + FRAME_SAMPLES, fake.adc_read);
+}
+
+
+// So the main loop can tell how long it spends processing frames, rather than
+// waiting for them.
+void test_read_frame_adds_up_the_time_it_waits_for_samples(void)
+{
+    fake.adc_read_chunk = FRAME_SAMPLES / 2;
+    fake.adc_read_wait_us = 2000;
+    for (int i = 0; i < 2 * FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 1650);
+    int mv[FRAME_SAMPLES];
+
+    mic_read_frame(mv, FRAME_SAMPLES);
+    TEST_ASSERT_EQUAL_INT64(4000, mic_time_waited_us());
+
+    fake.now_us += 10000;  // processing the frame
+    mic_read_frame(mv, FRAME_SAMPLES);
+    TEST_ASSERT_EQUAL_INT64(8000, mic_time_waited_us());
+}
+
+
+// So the main loop can tell whether it keeps up with the mic.
+void test_frames_the_driver_drops_are_counted(void)
+{
+    TEST_ASSERT_EQUAL_UINT32(0, mic_frames_dropped());
+
+    fake_adc_drop_frame();
+    fake_adc_drop_frame();
+
+    TEST_ASSERT_EQUAL_UINT32(2, mic_frames_dropped());
 }
 
 
@@ -319,6 +352,8 @@ int main(void)
     RUN_TEST(test_read_frame_skips_results_from_other_channels);
     RUN_TEST(test_read_frame_keeps_reading_until_the_frame_is_full);
     RUN_TEST(test_read_frame_reads_no_further_than_the_frame);
+    RUN_TEST(test_read_frame_adds_up_the_time_it_waits_for_samples);
+    RUN_TEST(test_frames_the_driver_drops_are_counted);
     RUN_TEST(test_read_frame_reports_clipping_near_the_adc_rails);
     RUN_TEST(test_read_frame_without_calibration_assumes_3100mv_full_scale);
     RUN_TEST(test_pause_stops_sampling_until_resume);

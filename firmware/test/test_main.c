@@ -16,12 +16,17 @@
 
 // The fake mic.  mic_read_frame() returns heard_mv[], and
 // mic_sensitivity_update() records whether main.c found the frame too loud or
-// too quiet, and reports a gain change of gain_change.
+// too quiet, and reports a gain change of gain_change.  mic_frames_dropped()
+// and mic_time_waited_us() report dropped_frames and waited_us, and each
+// mic_read_frame() waits read_wait_us for the samples.
 static int heard_mv[MAX_SAMPLES];
 static bool heard_clipped;
 static bool reported_loud;
 static bool reported_quiet;
 static float gain_change;
+static uint32_t dropped_frames;
+static int64_t waited_us;
+static int64_t read_wait_us;
 
 void mic_init(void)
 {
@@ -33,6 +38,8 @@ void mic_stop(void)
 
 bool mic_read_frame(int* voltages, int total_samples)
 {
+    fake.now_us += read_wait_us;
+    waited_us += read_wait_us;
     memcpy(voltages, heard_mv, total_samples * sizeof(int));
     return heard_clipped;
 }
@@ -42,6 +49,16 @@ float mic_sensitivity_update(bool loud, bool quiet)
     reported_loud = loud;
     reported_quiet = quiet;
     return gain_change;
+}
+
+uint32_t mic_frames_dropped(void)
+{
+    return dropped_frames;
+}
+
+int64_t mic_time_waited_us(void)
+{
+    return waited_us;
 }
 
 static bool mic_paused;
@@ -110,6 +127,10 @@ void setUp(void)
     memset(vDecay, 0, sizeof(vDecay));
     set_floor(FLOOR_LOWEST_MV);  // as app_main() starts
     floor_logged_us = 0;
+    memset(&frame_stats, 0, sizeof(frame_stats));
+    dropped_frames = 0;
+    waited_us = 0;
+    read_wait_us = 0;
     crowd_state = 1;
     gain_change = 1;
     heard_clipped = false;
@@ -581,6 +602,54 @@ void test_the_floor_log_counts_all_72_bins_of_24_leds_in_pattern_b(void)
 }
 
 
+// End a frame of the light show that was busy for busy_us, after waiting
+// wait_us for the mic.
+static void frame_ended_after(int64_t busy_us, int64_t wait_us)
+{
+    waited_us += wait_us;
+    fake.now_us += busy_us + wait_us;
+    log_frames(fake.now_us);
+}
+
+
+// So the serial log shows whether the main loop keeps up with the mic.
+void test_the_frame_log_reports_how_long_frames_took_and_how_many_were_dropped(void)
+{
+    _config_sample_freq_hz = 10000;  // 64-sample frames last 6.4 ms
+    start_frame_log(fake.now_us);
+
+    frame_ended_after(4000, 2400);
+    dropped_frames = 1;
+    frame_ended_after(2000, FRAME_LOG_US - 8400 - 1);
+    TEST_ASSERT_EQUAL_STRING("", fake.last_log);
+
+    frame_ended_after(3000, 1);
+    TEST_ASSERT_EQUAL_STRING("main: 3 frames of 6.4 ms, 1 dropped, 3.0 ms busy each (max 4.0): "
+                             "read 0.0, window 0.0, FFT 0.0, magnitude 0.0, rest 3.0", fake.last_log);
+
+    // The next line counts from there.
+    fake.last_log[0] = '\0';
+    frame_ended_after(5000, 1000);
+    frame_ended_after(3000, FRAME_LOG_US - 9000);
+    TEST_ASSERT_EQUAL_STRING("main: 2 frames of 6.4 ms, 0 dropped, 4.0 ms busy each (max 5.0): "
+                             "read 0.0, window 0.0, FFT 0.0, magnitude 0.0, rest 4.0", fake.last_log);
+}
+
+
+// Waiting for the mic isn't time spent reading a frame.
+void test_the_frame_log_leaves_waiting_for_the_mic_out_of_reading_a_frame(void)
+{
+    start_frame_log(fake.now_us);
+    hear_tone(TONE_BIN, 0);
+    read_wait_us = 6400;
+
+    read_spectrum(voltages, vReal, vImag);
+
+    TEST_ASSERT_EQUAL_INT64(0, frame_stats.read_us);
+    TEST_ASSERT_EQUAL_INT64(0, frame_stats.window_us);
+}
+
+
 void test_the_battery_is_read_with_the_mic_paused(void)
 {
     read_battery();
@@ -622,6 +691,8 @@ int main(void)
     RUN_TEST(test_the_floor_log_waits_between_lines);
     RUN_TEST(test_the_floor_log_leaves_out_mic_gain_changes);
     RUN_TEST(test_the_floor_log_counts_all_72_bins_of_24_leds_in_pattern_b);
+    RUN_TEST(test_the_frame_log_reports_how_long_frames_took_and_how_many_were_dropped);
+    RUN_TEST(test_the_frame_log_leaves_waiting_for_the_mic_out_of_reading_a_frame);
     RUN_TEST(test_the_battery_is_read_with_the_mic_paused);
     return UNITY_END();
 }
