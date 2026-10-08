@@ -29,6 +29,11 @@ const static char *TAG = "main";
 
 
 #define N_SAMPLES _config_total_samples
+// Each frame overlaps the one before by half, so the LEDs update every half
+// frame, every 15.4 ms with 24 LEDs in pattern C.  Updating only once a frame
+// sampled a held note's level too slowly to follow quick changes in it, such
+// as close partials beating, and turned them into a slow flutter.
+#define N_HOP (N_SAMPLES / 2)
 // leds_display() only shows the lowest bins, three per pair of LEDs in pattern
 // A and three per LED in the others.
 #define N_DISPLAYED_BINS config_displayed_bins()
@@ -79,14 +84,21 @@ const static char *TAG = "main";
 #define BATTERY_CHECK_US 10000000
 
 // How often to log how long the light show takes to process a frame, and how
-// many frames the mic dropped because the one before was still being
-// processed.  The loop keeps up while processing a frame takes less time than
-// recording one.
+// many hops of new samples the mic dropped because the frame before was still
+// being processed.  The loop keeps up while processing a frame takes less time
+// than recording a hop.
 #define FRAME_LOG_US         1000000
 
 // Each shown bin's floor at the last floor log, and when that was, 0 for never.
 static float floor_logged[CONFIG_MAX_LEDS * 3];
 static int64_t floor_logged_us = 0;
+
+// Whether the samples kept from the last frame are out of date, so the next
+// frame must be read whole: at power-on, and after the mic pauses.  And
+// mic_frames_dropped() after the last frame was read, as a dropped hop leaves
+// a gap after them too.
+static bool frame_stale = true;
+static uint32_t frame_dropped = 0;
 
 // The time spent on each step of the frames since the last frame log, in µs.
 static struct {
@@ -113,8 +125,10 @@ static void time_step(int64_t* total_us, int64_t* since)
 }
 
 
-// Sample one frame from the mic and put the shown bins' levels, in mV, in
-// vReal.  The bins past them are left as they were, as nothing uses them.
+// Read a hop of samples from the mic into the end of the frame in voltages,
+// after the newest samples of the last frame, and put the shown bins' levels,
+// in mV, in vReal.  The bins past them are left as they were, as nothing uses
+// them.
 // Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
 // clipped or the brightest LED would be at full brightness, too quiet if the
 // loudest bin is under a quarter of that.  The 12 dB gap between the two is
@@ -125,7 +139,16 @@ static float read_spectrum(int* voltages, float* vReal)
     float peak = 0;
     int64_t step_start = esp_timer_get_time();
     int64_t waited = mic_time_waited_us();
-    bool clipped = mic_read_frame(voltages, N_SAMPLES);
+    bool clipped = false;
+    if (frame_stale || mic_frames_dropped() != frame_dropped) {
+        for (int start = 0; start < N_SAMPLES; start += N_HOP)
+            clipped |= mic_read_frame(voltages + start, N_HOP);
+        frame_stale = false;
+    } else {
+        memmove(voltages, voltages + N_HOP, (N_SAMPLES - N_HOP) * sizeof(int));
+        clipped = mic_read_frame(voltages + N_SAMPLES - N_HOP, N_HOP);
+    }
+    frame_dropped = mic_frames_dropped();
     frame_stats.read_us -= mic_time_waited_us() - waited;
     time_step(&frame_stats.read_us, &step_start);
 
@@ -213,8 +236,8 @@ static float ms_per_frame(int64_t total_us)
 
 
 // Count a frame of the light show that ended at `now`.  Every FRAME_LOG_US,
-// log how long frames took to process, step by step, and how many the mic
-// dropped.  The rest is the floor, the colours, sending them to the LEDs, the
+// log how long frames took to process, step by step, and how many hops the
+// mic dropped.  The rest is the floor, the colours, sending them to the LEDs, the
 // battery check and logging.
 static void log_frames(int64_t now)
 {
@@ -233,10 +256,10 @@ static void log_frames(int64_t now)
 
     uint32_t dropped = mic_frames_dropped();
     int64_t steps_us = frame_stats.read_us + frame_stats.window_us + frame_stats.fft_us + frame_stats.magnitude_us;
-    ESP_LOGI(TAG, "%d frames of %.1f ms, %d dropped, %.1f ms busy each (max %.1f): "
+    ESP_LOGI(TAG, "%d frames of %.1f ms, %.1f ms apart, %d dropped, %.1f ms busy each (max %.1f): "
              "read %.1f, window %.1f, FFT %.1f, magnitude %.1f, rest %.1f",
              frame_stats.frames, N_SAMPLES * 1000.0f / _config_sample_freq_hz,
-             (int)(dropped - frame_stats.dropped),
+             N_HOP * 1000.0f / _config_sample_freq_hz, (int)(dropped - frame_stats.dropped),
              ms_per_frame(frame_stats.busy_us), frame_stats.max_busy_us / 1000.0f,
              ms_per_frame(frame_stats.read_us), ms_per_frame(frame_stats.window_us),
              ms_per_frame(frame_stats.fft_us), ms_per_frame(frame_stats.magnitude_us),
@@ -280,12 +303,15 @@ static void spectrum_to_colours(float* vReal, const float* vFloor, float* vDecay
 
 
 // Read the battery, and have the LEDs warn if it's low.  ADC1 can't take a
-// battery reading while it samples the mic continuously, so pause the mic for it.
+// battery reading while it samples the mic continuously, so pause the mic for
+// it.  The samples kept from the last frame end before the pause, so read the
+// next frame whole.
 static void read_battery(void)
 {
     mic_pause();
     leds_show_low_battery(battery_check());
     mic_resume();
+    frame_stale = true;
 }
 
 
@@ -309,7 +335,7 @@ void app_main(void)
     battery_init();
     // The mic isn't sampling yet, so ADC1 is free for the first battery reading.
     leds_show_low_battery(battery_check());
-    mic_init();
+    mic_init(N_HOP);
     leds_init();
     leds_scanning_start();
     fft_init(N_SAMPLES);

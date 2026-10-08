@@ -147,13 +147,14 @@ static bool mic_on_pool_overflow(adc_continuous_handle_t handle, const adc_conti
 
 // The ADC samples the mic continuously by DMA, so the sample timing is set by
 // hardware and can't be disturbed by other tasks or interrupts.  Requires
-// config_init() to have been called first to size the frame and set the rate.
-void mic_init(void) {
-    uint32_t frame_size = _config_total_samples * SOC_ADC_DIGI_RESULT_BYTES;
+// config_init() to have been called first to set the rate.  The driver hands
+// over frame_samples at a time, half an FFT frame.
+void mic_init(int frame_samples) {
+    uint32_t frame_size = frame_samples * SOC_ADC_DIGI_RESULT_BYTES;
 
-    // The driver hands over one FFT frame at a time and keeps only the newest
-    // one.  If the main loop falls behind, older frames are dropped, so the
-    // LEDs never lag the sound by more than a frame.
+    // The driver keeps only the newest frame.  If the main loop falls behind,
+    // older frames are dropped, so the LEDs never lag the sound by more than a
+    // frame.
     adc_continuous_handle_cfg_t handle_config = {
         .max_store_buf_size = frame_size,
         .conv_frame_size = frame_size,
@@ -298,7 +299,10 @@ void mic_pause(void) {
 }
 
 
+// Stopping the ADC keeps the last frame it finished, from before the pause, so
+// drop it, or the next read would join it to samples from after the pause.
 void mic_resume(void) {
+    ESP_ERROR_CHECK(adc_continuous_flush_pool(mic_handle));
     ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
 }
 

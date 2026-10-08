@@ -48,8 +48,9 @@ typedef struct {
 
     // adc_continuous_read() hands out the results queued by fake_adc_queue()
     // in order, at most adc_read_chunk per call, and times out once they run
-    // out.  adc_read counts the results handed out so far.  Each call waits
-    // adc_read_wait_us for them, moving now_us on.
+    // out.  adc_read counts the results handed out, or dropped by
+    // adc_continuous_flush_pool(), so far.  Each call waits adc_read_wait_us
+    // for them, moving now_us on.
     adc_digi_output_data_t adc_results[FAKE_ADC_MAX_RESULTS];
     int adc_queued;
     int adc_read;

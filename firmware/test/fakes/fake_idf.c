@@ -203,6 +203,17 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t adc)
     return ESP_OK;
 }
 
+esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t adc)
+{
+    // Like the real driver, only while stopped.  It drops the results the
+    // ADC finished before then.
+    if (fake.adc_running)
+        return ESP_ERR_INVALID_STATE;
+
+    fake.adc_read = fake.adc_queued;
+    return ESP_OK;
+}
+
 esp_err_t adc_continuous_deinit(adc_continuous_handle_t adc)
 {
     return ESP_OK;

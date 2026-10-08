@@ -14,12 +14,16 @@
 // A bin that every board shows, clear of DC.
 #define TONE_BIN 5
 
-// The fake mic.  mic_read_frame() returns heard_mv[], and
-// mic_sensitivity_update() records whether main.c found the frame too loud or
-// too quiet, and reports a gain change of gain_change.  mic_frames_dropped()
-// and mic_time_waited_us() report dropped_frames and waited_us, and each
-// mic_read_frame() waits read_wait_us for the samples.
-static int heard_mv[MAX_SAMPLES];
+// The fake mic.  mic_read_frame() hands out the tone set by hear_tone(), one
+// sample after another, so reads join up as they do from the ADC, and
+// heard_samples counts the samples handed out.  mic_sensitivity_update()
+// records whether main.c found the frame too loud or too quiet, and reports a
+// gain change of gain_change.  mic_frames_dropped() and mic_time_waited_us()
+// report dropped_frames and waited_us, and each mic_read_frame() waits
+// read_wait_us for the samples.
+static int heard_bin;
+static double heard_mv;
+static long heard_samples;
 static bool heard_clipped;
 static bool reported_loud;
 static bool reported_quiet;
@@ -28,7 +32,7 @@ static uint32_t dropped_frames;
 static int64_t waited_us;
 static int64_t read_wait_us;
 
-void mic_init(void)
+void mic_init(int frame_samples)
 {
 }
 
@@ -36,11 +40,20 @@ void mic_stop(void)
 {
 }
 
+// The sample of the heard tone the fake mic hands out i samples after the
+// first: amplitude heard_mv, around the middle of the ADC's range, in the
+// middle of FFT bin heard_bin.
+static int heard_sample(long i)
+{
+    return 1650 + (int)lround(heard_mv * sin(2 * M_PI * heard_bin * i / N_SAMPLES));
+}
+
 bool mic_read_frame(int* voltages, int total_samples)
 {
     fake.now_us += read_wait_us;
     waited_us += read_wait_us;
-    memcpy(voltages, heard_mv, total_samples * sizeof(int));
+    for (int i = 0; i < total_samples; i++)
+        voltages[i] = heard_sample(heard_samples++);
     return heard_clipped;
 }
 
@@ -118,6 +131,8 @@ static void use_board(int leds, config_pattern_t pattern, int samples)
     _config_pattern = pattern;
     _config_total_samples = samples;
     fft_init(samples);
+    frame_stale = true;  // as at power-on
+    heard_samples = 0;
 }
 
 void setUp(void)
@@ -128,6 +143,7 @@ void setUp(void)
     floor_logged_us = 0;
     memset(&frame_stats, 0, sizeof(frame_stats));
     dropped_frames = 0;
+    frame_dropped = 0;
     waited_us = 0;
     read_wait_us = 0;
     crowd_state = 1;
@@ -148,8 +164,63 @@ void tearDown(void)
 // board's sample rate, which the signal path doesn't use.
 static void hear_tone(int bin, double amplitude_mv)
 {
-    for (int i = 0; i < MAX_SAMPLES; i++)
-        heard_mv[i] = 1650 + (int)lround(amplitude_mv * sin(2 * M_PI * bin * i / N_SAMPLES));
+    heard_bin = bin;
+    heard_mv = amplitude_mv;
+}
+
+
+// Check the frame in voltages is the newest N_SAMPLES the mic handed out.
+static void assert_frame_is_the_newest_samples(void)
+{
+    for (int i = 0; i < N_SAMPLES; i++) {
+        char message[32];
+        snprintf(message, sizeof(message), "sample %d of the frame", i);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(heard_sample(heard_samples - N_SAMPLES + i), voltages[i], message);
+    }
+}
+
+
+// So the LEDs update every half frame, and follow quick changes in a held
+// note without flickering.
+void test_each_frame_keeps_the_newest_half_of_the_last_and_reads_the_next_half(void)
+{
+    use_board(24, CONFIG_PATTERN_C, 512);
+    hear_tone(TONE_BIN, 100);
+
+    read_spectrum(voltages, vReal);
+    TEST_ASSERT_EQUAL(512, heard_samples);
+
+    read_spectrum(voltages, vReal);
+    TEST_ASSERT_EQUAL(512 + 256, heard_samples);
+    assert_frame_is_the_newest_samples();
+    TEST_ASSERT_FLOAT_WITHIN(3, 100, vReal[TONE_BIN]);
+}
+
+
+// The samples kept from the last frame end before the pause.
+void test_after_a_battery_check_the_next_frame_is_read_whole(void)
+{
+    read_spectrum(voltages, vReal);
+    read_battery();
+    read_spectrum(voltages, vReal);
+
+    TEST_ASSERT_EQUAL(2 * N_SAMPLES, heard_samples);
+    assert_frame_is_the_newest_samples();
+}
+
+
+// A dropped hop leaves a gap after the samples kept from the last frame.
+void test_after_the_mic_drops_a_hop_the_next_frame_is_read_whole(void)
+{
+    read_spectrum(voltages, vReal);
+    dropped_frames++;
+    read_spectrum(voltages, vReal);
+
+    TEST_ASSERT_EQUAL(2 * N_SAMPLES, heard_samples);
+    assert_frame_is_the_newest_samples();
+
+    read_spectrum(voltages, vReal);
+    TEST_ASSERT_EQUAL(2 * N_SAMPLES + N_HOP, heard_samples);
 }
 
 
@@ -623,14 +694,14 @@ void test_the_frame_log_reports_how_long_frames_took_and_how_many_were_dropped(v
     TEST_ASSERT_EQUAL_STRING("", fake.last_log);
 
     frame_ended_after(3000, 1);
-    TEST_ASSERT_EQUAL_STRING("main: 3 frames of 6.4 ms, 1 dropped, 3.0 ms busy each (max 4.0): "
+    TEST_ASSERT_EQUAL_STRING("main: 3 frames of 6.4 ms, 3.2 ms apart, 1 dropped, 3.0 ms busy each (max 4.0): "
                              "read 0.0, window 0.0, FFT 0.0, magnitude 0.0, rest 3.0", fake.last_log);
 
     // The next line counts from there.
     fake.last_log[0] = '\0';
     frame_ended_after(5000, 1000);
     frame_ended_after(3000, FRAME_LOG_US - 9000);
-    TEST_ASSERT_EQUAL_STRING("main: 2 frames of 6.4 ms, 0 dropped, 4.0 ms busy each (max 5.0): "
+    TEST_ASSERT_EQUAL_STRING("main: 2 frames of 6.4 ms, 3.2 ms apart, 0 dropped, 4.0 ms busy each (max 5.0): "
                              "read 0.0, window 0.0, FFT 0.0, magnitude 0.0, rest 4.0", fake.last_log);
 }
 
@@ -661,6 +732,9 @@ void test_the_battery_is_read_with_the_mic_paused(void)
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_each_frame_keeps_the_newest_half_of_the_last_and_reads_the_next_half);
+    RUN_TEST(test_after_a_battery_check_the_next_frame_is_read_whole);
+    RUN_TEST(test_after_the_mic_drops_a_hop_the_next_frame_is_read_whole);
     RUN_TEST(test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size);
     RUN_TEST(test_a_tone_leaves_shown_bins_away_from_it_under_the_noise_floor);
     RUN_TEST(test_silence_is_too_quiet);

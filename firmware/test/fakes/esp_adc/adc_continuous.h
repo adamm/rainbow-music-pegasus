@@ -42,4 +42,5 @@ esp_err_t adc_continuous_register_event_callbacks(adc_continuous_handle_t handle
 esp_err_t adc_continuous_start(adc_continuous_handle_t handle);
 esp_err_t adc_continuous_read(adc_continuous_handle_t handle, uint8_t *buf, uint32_t length_max, uint32_t *out_length, uint32_t timeout_ms);
 esp_err_t adc_continuous_stop(adc_continuous_handle_t handle);
+esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle);
 esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle);

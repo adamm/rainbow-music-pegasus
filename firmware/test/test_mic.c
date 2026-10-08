@@ -26,10 +26,9 @@ static void boot(void)
     mic_waited_us = 0;
     fake.adc_running = false;
 
-    _config_total_samples = FRAME_SAMPLES;
     _config_sample_freq_hz = SAMPLE_FREQ_HZ;
     digipot_init();
-    mic_init();
+    mic_init(FRAME_SAMPLES);
 }
 
 void setUp(void)
@@ -242,6 +241,24 @@ void test_pause_stops_sampling_until_resume(void)
 }
 
 
+// Otherwise the next frame would join samples from before the pause to ones
+// from after it.
+void test_resume_drops_samples_from_before_the_pause(void)
+{
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 1000);
+    mic_pause();
+    mic_resume();
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 2000);
+
+    int mv[FRAME_SAMPLES];
+    mic_read_frame(mv, FRAME_SAMPLES);
+
+    TEST_ASSERT_EACH_EQUAL_INT(2000, mv, FRAME_SAMPLES);
+}
+
+
 void test_sensitivity_starts_at_the_digipot_power_on_wiper(void)
 {
     TEST_ASSERT_EQUAL(128, wiper());
@@ -375,6 +392,7 @@ int main(void)
     RUN_TEST(test_read_frame_reports_clipping_near_the_adc_rails);
     RUN_TEST(test_read_frame_without_calibration_assumes_3100mv_full_scale);
     RUN_TEST(test_pause_stops_sampling_until_resume);
+    RUN_TEST(test_resume_drops_samples_from_before_the_pause);
     RUN_TEST(test_sensitivity_starts_at_the_digipot_power_on_wiper);
     RUN_TEST(test_loud_lowers_sensitivity_by_a_quarter_once_held);
     RUN_TEST(test_loud_keeps_lowering_sensitivity_while_it_lasts);

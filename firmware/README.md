@@ -62,8 +62,9 @@ doesn't support them.
 3. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
    on the wings while the mic sensitivity and the background floor adjust to
    the room.
-4. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
-   apply a Blackman window and FFT, adjust the mic sensitivity, learn each
+4. **Light show** (`main.c`, `leds.c`): forever, read the next half frame of
+   mic samples and, with the half before it, remove DC, apply a Blackman
+   window and FFT, adjust the mic sensitivity, learn each
    bin's background floor and keep only the sound well above it, apply a
    peak-and-decay filter, and send the bins to the LEDs.  Every 10 seconds,
    check the battery.
@@ -71,10 +72,19 @@ doesn't support them.
 The ADC samples the mic in continuous (DMA) mode, at a rate set by the LED
 count (see [Frequency range](#frequency-range)), so the sample timing is set
 by hardware, not software delays, and other tasks such Bluetooth can't disturb
-it.  The driver keeps only the newest frame: if the FFT and LED update fall
-behind, older frames are dropped, so the lights never lag the sound by more
-than one frame.  In pattern A that's 6.4 ms with 10 LEDs, up to 15.4 ms with
-24, and in patterns B and C twice that.
+it.
+
+Each frame overlaps the one before by half, so the LEDs update every half
+frame: in pattern A every 3.2 ms with 10 LEDs, up to 7.7 ms with 24, and in
+patterns B and C twice that.  Updating only once a frame sampled a held
+note's level too slowly to follow quick changes in it, such as close partials
+beating, and turned them into a slow flutter.
+
+The driver hands over half a frame at a time and keeps only the newest: if
+the FFT and LED update fall behind, older halves are dropped, so the lights
+never lag the sound by more than a frame.  After a dropped half, the half kept
+from the last frame no longer leads straight into the next, so the next frame
+is read whole.
 
 ## LED count jumpers
 
@@ -139,8 +149,8 @@ top frequency:
 
 Patterns B and C show twice as many bins with twice the FFT size, so they
 sample at the same rate as A.  Their bins are half as wide, but each frame
-takes twice as long to sample, so the lights can lag the sound by up to twice
-as long.
+takes twice as long to sample, so the LEDs update half as often, every half
+frame.
 
 | LEDs | Sample rate | FFT size (A / B, C) | Bin width (A / B, C) | Frame (A / B, C) |
 |------|-------------|---------------------|----------------------|------------------|
@@ -270,8 +280,9 @@ The mic and the battery are both on ADC1, which can sample continuously or
 take oneshot readings but not both at once.  So `main.c` takes the first
 reading at power-on, before the mic starts.  After that, every 10 seconds it
 pauses the mic (`mic_pause()`), reads the battery and resumes the mic
-(`mic_resume()`).  This delays the next frame by at most a frame (15.4 ms in
-pattern A, 30.7 ms in B and C).
+(`mic_resume()`).  Resuming drops what the ADC recorded before the pause, and
+the next frame is read whole, so this delays the next update by up to a frame
+(15.4 ms in pattern A, 30.7 ms in B and C).
 
 The voltage dips with the music as the LEDs draw current, so readings are
 smoothed.  The smoothed voltage moves about two thirds of the way to a new
@@ -315,13 +326,13 @@ Useful messages appear in the serial monitor:
   0.5 dB, e.g. `adjusted the floor up on 3 bins and down on 1, of 15`.  Gain
   changes aren't counted, since `mic` logs those.  In a steady room most bins
   stay put; when a crowd grows or a note is held, they go up.
-- `main`, each second of the light show: how many frames it processed and how
-  long each lasts, how many the mic dropped because the frame before was still
-  being processed, and how long a frame took to process, on average and at
-  most.  The average is split into steps: reading the samples (converting them
+- `main`, each second of the light show: how many frames it processed, how
+  long each lasts and how far apart they are (half a frame), how many halves
+  of a frame the mic dropped because the frame before was still being
+  processed, and how long a frame took to process, on average and at most.  The average is split into steps: reading the samples (converting them
   to mV, not waiting for them), the window (with removing DC), the FFT, the
   magnitudes, and the rest (the floor, the colours, sending them to the LEDs,
   the battery check and logging).  The light show keeps up while a frame takes
-  less time to process than to record.  Once it doesn't, the mic drops frames,
-  and the LEDs miss that sound.
+  less time to process than half a frame takes to record.  Once it doesn't,
+  the mic drops halves of frames, and the LEDs miss that sound.
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`
