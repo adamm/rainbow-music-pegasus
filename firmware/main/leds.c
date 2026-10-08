@@ -18,9 +18,10 @@
 #define RMT_LED_STRIP_RESOLUTION_HZ 10000000 // 10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 
 // While the battery is low, the first LED in each wing blinks red over the light
-// show, for LEDS_LOW_BATTERY_ON_US every LEDS_LOW_BATTERY_PERIOD_US.  The light
-// show never lights both LEDs of a pair pure red, so the blink can't be mistaken
-// for the music, and every other LED shows the music as usual.
+// show, for LEDS_LOW_BATTERY_ON_US every LEDS_LOW_BATTERY_PERIOD_US.  In pattern
+// A the light show never lights both LEDs of a pair pure red, so the blink can't
+// be mistaken for the music, and every other LED shows the music as usual.  In
+// patterns B and C, deep bass alone lights the first pair pure red.
 #define LEDS_LOW_BATTERY_PERIOD_US  3000000
 #define LEDS_LOW_BATTERY_ON_US      250000
 #define LEDS_LOW_BATTERY_RED        128
@@ -175,11 +176,23 @@ void leds_scanning_stop() {
 }
 
 
-void leds_display(uint8_t* values, int total_values) {
-    rmt_transmit_config_t tx_config = {
-        .loop_count = 0, // no transfer loop
-    };
+// Set the LED at `index` along the strip.  WS2812Bs take the bytes as green,
+// red, blue.
+static void leds_set(int index, uint8_t red, uint8_t green, uint8_t blue) {
+    led_strip_pixels[index*3]   = green;
+    led_strip_pixels[index*3+1] = red;
+    led_strip_pixels[index*3+2] = blue;
+}
 
+
+// The brightness of bin i of the total_values in values, dark past the end.
+static uint8_t leds_bin(const uint8_t* values, int total_values, int i) {
+    return i < total_values ? values[i] : 0;
+}
+
+
+// Pattern A: each pair of LEDs shows three bins, lowest first.
+static void leds_display_pattern_a(uint8_t* values, int total_values) {
     for (int i = 0; (i < total_values) && (i < _config_total_leds*3/2); i += 3) {
         // Right side gets the green byte first.  Left side gets the blue byte first.
         // This results in a symmetrical brightness but asymmetrical colour when comparing
@@ -205,6 +218,54 @@ void leds_display(uint8_t* values, int total_values) {
         // Right white sounds will be white on the left.
 
         // Pretty neat!
+    }
+}
+
+
+// Pattern B: each pair of LEDs shows six bins, one per channel, lowest first:
+// the right then left LED's red, then their green, then their blue.  So each
+// pair runs from red to blue, and the wings show alternate bins.
+static void leds_display_pattern_b(uint8_t* values, int total_values) {
+    for (int i = 0; i < _config_total_leds; i++) {
+        int first = i / 2 * 6 + i % 2;
+        leds_set(i,
+                 leds_bin(values, total_values, first),
+                 leds_bin(values, total_values, first + 2),
+                 leds_bin(values, total_values, first + 4));
+    }
+}
+
+
+// Pattern C: the lowest third of the bins light every LED's red in strip
+// order, the middle third their green, and the top third their blue.  So bass
+// is red, mids green and treble blue, and the wings show alternate bins.
+static void leds_display_pattern_c(uint8_t* values, int total_values) {
+    int leds = _config_total_leds;
+
+    for (int i = 0; i < leds; i++) {
+        leds_set(i,
+                 leds_bin(values, total_values, i),
+                 leds_bin(values, total_values, leds + i),
+                 leds_bin(values, total_values, leds * 2 + i));
+    }
+}
+
+
+void leds_display(uint8_t* values, int total_values) {
+    rmt_transmit_config_t tx_config = {
+        .loop_count = 0, // no transfer loop
+    };
+
+    switch (_config_pattern) {
+    case CONFIG_PATTERN_A:
+        leds_display_pattern_a(values, total_values);
+        break;
+    case CONFIG_PATTERN_B:
+        leds_display_pattern_b(values, total_values);
+        break;
+    case CONFIG_PATTERN_C:
+        leds_display_pattern_c(values, total_values);
+        break;
     }
 
     // The first pair of LEDs is the nearest the ESP32, and is fitted on every board.

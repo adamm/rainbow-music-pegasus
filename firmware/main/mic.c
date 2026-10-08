@@ -34,8 +34,9 @@ const static char *TAG = "mic";
 // gain above 0 at code 0.
 #define MIC_WIPER_RESISTANCE_CODES  0.35f
 
-// A frame lasts LEDs * 1.5 / CONFIG_LEDS_TOP_FREQ_HZ, at most 15.4 ms at the
-// default top frequency, so waiting this long means the ADC has stopped.
+// A frame lasts the number of shown bins / CONFIG_LEDS_TOP_FREQ_HZ, at most
+// 30.7 ms at the default top frequency, so waiting this long means the ADC has
+// stopped.
 #define MIC_READ_TIMEOUT_MS     1000
 
 static bool mic_calibrated = false;

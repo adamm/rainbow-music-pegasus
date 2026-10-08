@@ -29,8 +29,9 @@ const static char *TAG = "main";
 
 
 #define N_SAMPLES _config_total_samples
-// leds_display() only shows the lowest bins, three per pair of LEDs.
-#define N_DISPLAYED_BINS (_config_total_leds * 3 / 2)
+// leds_display() only shows the lowest bins, three per pair of LEDs in pattern
+// A and three per LED in the others.
+#define N_DISPLAYED_BINS config_displayed_bins()
 
 // Average weight of the Blackman window, which scales every FFT bin.
 #define FFT_WINDOW_GAIN 0.42323f
@@ -80,7 +81,7 @@ const static char *TAG = "main";
 #define BATTERY_CHECK_US 10000000
 
 // Each shown bin's floor at the last floor log, and when that was, 0 for never.
-static float floor_logged[CONFIG_MAX_LEDS * 3 / 2];
+static float floor_logged[CONFIG_MAX_LEDS * 3];
 static int64_t floor_logged_us = 0;
 
 

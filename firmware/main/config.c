@@ -7,6 +7,7 @@
 const static char *TAG = "config";
 
 uint8_t _config_total_leds = 0;
+config_pattern_t _config_pattern = CONFIG_LEDS_PATTERN;
 uint16_t _config_total_samples = 0;
 uint32_t _config_sample_freq_hz = 0;
 
@@ -50,13 +51,29 @@ void config_init() {
     else
         _config_total_samples = 256;
 
-    // Each pair of LEDs shows three FFT bins, and each bin is the sample rate
-    // divided by the FFT size wide.  Pick the sample rate that makes the shown
-    // bins end at the top frequency, so every board shows the same range.
-    uint32_t displayed_bins = _config_total_leds * 3 / 2;
+    // Patterns B and C show twice as many bins as A, so they take frames twice
+    // as large to show the same range at the same sample rate.
+    _config_pattern = CONFIG_LEDS_PATTERN;
+    if (_config_pattern != CONFIG_PATTERN_A)
+        _config_total_samples *= 2;
+
+    // Each bin is the sample rate divided by the FFT size wide.  Pick the
+    // sample rate that makes the shown bins end at the top frequency, so every
+    // board shows the same range.
+    uint32_t displayed_bins = config_displayed_bins();
     _config_sample_freq_hz = ((uint32_t)_config_total_samples * CONFIG_LEDS_TOP_FREQ_HZ + displayed_bins / 2) / displayed_bins;
 
     ESP_LOGI(TAG, "Total LEDs configured is %d", _config_total_leds);
+    ESP_LOGI(TAG, "Showing %d bins in pattern %c", config_displayed_bins(), 'A' + _config_pattern);
     ESP_LOGI(TAG, "Total samples configured is %d", _config_total_samples);
     ESP_LOGI(TAG, "Sampling at %d Hz to show 0 to %d Hz", (int)_config_sample_freq_hz, CONFIG_LEDS_TOP_FREQ_HZ);
+}
+
+
+// How many of the lowest FFT bins the LEDs show: three per pair of LEDs in
+// pattern A, and one per colour channel in the others.
+uint16_t config_displayed_bins(void) {
+    if (_config_pattern == CONFIG_PATTERN_A)
+        return _config_total_leds * 3 / 2;
+    return _config_total_leds * 3;
 }
