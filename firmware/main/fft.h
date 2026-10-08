@@ -67,7 +67,7 @@ typedef enum {
 void fft_init(float *vReal, float *vImag, uint16_t samples,
                      float samplingFrequency);
 
-void fft_complexToMagnitude();
+void fft_complexToMagnitude(uint16_t bins);
 void fft_compute(FFTDirection dir);
 void fft_dcRemoval();
 float fft_majorPeak();

@@ -181,13 +181,13 @@ void test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size(void)
 }
 
 
-void test_a_tone_leaves_bins_away_from_it_under_the_noise_floor(void)
+void test_a_tone_leaves_shown_bins_away_from_it_under_the_noise_floor(void)
 {
     hear_tone(TONE_BIN, FFT_FULL_SCALE_MV);
 
     read_spectrum(voltages, vReal, vImag);
 
-    for (int i = 0; i < N_SAMPLES / 2; i++) {
+    for (int i = 0; i < N_DISPLAYED_BINS; i++) {
         if (abs(i - TONE_BIN) > 3)
             TEST_ASSERT_LESS_THAN_FLOAT(FFT_NOISE_FLOOR_MV, vReal[i]);
     }
@@ -663,7 +663,7 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size);
-    RUN_TEST(test_a_tone_leaves_bins_away_from_it_under_the_noise_floor);
+    RUN_TEST(test_a_tone_leaves_shown_bins_away_from_it_under_the_noise_floor);
     RUN_TEST(test_silence_is_too_quiet);
     RUN_TEST(test_a_tone_over_full_scale_is_too_loud);
     RUN_TEST(test_a_tone_between_a_quarter_and_full_scale_is_neither);

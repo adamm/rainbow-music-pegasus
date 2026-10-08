@@ -48,6 +48,10 @@ static int mic_sensitivity = 0;
 // was still unread, and how long mic_read_frame() has waited for samples.
 static volatile uint32_t mic_dropped_frames = 0;
 static int64_t mic_waited_us = 0;
+// The mV each raw reading stands for, filled in by mic_init().  Running each
+// sample through the calibration curve took about 9 µs, 4.7 ms of each 30.7 ms
+// frame with 24 LEDs in pattern C, so mic_read_frame() looks them up instead.
+static int16_t mic_raw_mv[1 << SOC_ADC_DIGI_MAX_BITWIDTH];
 
 
 static void mic_sensitivity_set(int sensitivity) {
@@ -120,6 +124,19 @@ void mic_calibration_deinit(adc_cali_handle_t handle)
 }
 
 
+static int mic_raw_to_voltage(int adc_raw) {
+    int voltage;
+
+    if (mic_cali_channel_handle) {
+        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
+    } else {
+        voltage = (adc_raw * 3100) / 4095;
+    }
+
+    return voltage;
+}
+
+
 // Called from the ADC's interrupt when a frame finishes while the last one is
 // still unread.  flush_pool drops the unread one.
 static bool mic_on_pool_overflow(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data) {
@@ -168,24 +185,14 @@ void mic_init(void) {
     assert(mic_frame);
 
     mic_calibration_init(CONFIG_MIC_UNIT, CONFIG_MIC_CHANNEL, CONFIG_MIC_ATTEN, &mic_cali_channel_handle);
+    // Takes about 40 ms, once, while the LEDs are still dark.
+    for (int raw = 0; raw < (1 << SOC_ADC_DIGI_MAX_BITWIDTH); raw++)
+        mic_raw_mv[raw] = mic_raw_to_voltage(raw);
 
     // Requires digipot_init() to have been called first.
     mic_sensitivity_set(MIC_SENSITIVITY_INIT);
 
     ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
-}
-
-
-static int mic_raw_to_voltage(int adc_raw) {
-    int voltage;
-
-    if (mic_cali_channel_handle) {
-        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
-    } else {
-        voltage = (adc_raw * 3100) / 4095;
-    }
-
-    return voltage;
 }
 
 
@@ -211,7 +218,7 @@ bool mic_read_frame(int* voltages, int total_samples) {
             // Skip the occasional invalid result, which reports a bogus channel.
             if (result->type2.channel != CONFIG_MIC_CHANNEL)
                 continue;
-            int voltage = mic_raw_to_voltage(result->type2.data);
+            int voltage = mic_raw_mv[result->type2.data];
             if (voltage <= MIC_CLIP_LOW_MV || voltage >= MIC_CLIP_HIGH_MV)
                 clipped = true;
             voltages[n++] = voltage;

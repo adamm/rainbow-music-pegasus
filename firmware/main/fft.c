@@ -19,6 +19,8 @@
 
 */
 
+#include <assert.h>
+
 #include "fft.h"
 
 #define sq(x) ((x)*(x))
@@ -28,8 +30,16 @@ float _samplingFrequency;
 float *_vReal;
 float *_vImag;
 uint8_t _power;
+// The weights of the first half of the window, the second half being their
+// mirror image, and which window they're for, or -1 for none yet.  Working
+// one out takes double-precision cos() calls, which are slow without an FPU,
+// so they're worked out by the first fft_windowing() after fft_init() and
+// reused.
+static float *_windowWeights = NULL;
+static int _windowWeightsType = -1;
 
 static uint8_t exponent(uint16_t value);
+static void computeWindowWeights(FFTWindow windowType);
 static void swap(float *x, float *y);
 static void parabola(float x1, float y1, float x2, float y2, float x3,
                             float y3, float *a, float *b, float *c);
@@ -41,6 +51,9 @@ void fft_init(float *vReal, float *vImag, uint16_t samples,
     _samples = samples;
     _samplingFrequency = samplingFrequency;
     _power = exponent(samples);
+    _windowWeights = realloc(_windowWeights, (samples >> 1) * sizeof(float));
+    assert(_windowWeights);
+    _windowWeightsType = -1;
 }
 
 void fft_compute(FFTDirection dir) {
@@ -100,10 +113,12 @@ void fft_compute(FFTDirection dir) {
 }
 
 
-void fft_complexToMagnitude() {
-    // vM is half the size of vReal and vImag
-    for (uint16_t i = 0; i < _samples; i++) {
-        _vReal[i] = sqrt(sq(_vReal[i]) + sq(_vImag[i]));
+// Replace the lowest `bins` of vReal with their magnitudes, and leave the rest.
+// Each takes a square root, which is slow without an FPU, so compute only the
+// bins that are used.
+void fft_complexToMagnitude(uint16_t bins) {
+    for (uint16_t i = 0; i < bins && i < _samples; i++) {
+        _vReal[i] = sqrtf(sq(_vReal[i]) + sq(_vImag[i]));
     }
 }
 
@@ -122,8 +137,7 @@ void fft_dcRemoval() {
 }
 
 
-void fft_windowing(FFTWindow windowType, FFTDirection dir) {
-    // Weighing factors are computed once before multiple use of FFT
+static void computeWindowWeights(FFTWindow windowType) {
     // The weighing function is symmetric; half the weighs are recorded
     float samplesMinusOne = (float)(_samples - 1.0);
     for (uint16_t i = 0; i < (_samples >> 1); i++) {
@@ -180,6 +194,19 @@ void fft_windowing(FFTWindow windowType, FFTDirection dir) {
                                                                 (samplesMinusOne / 2.0));
             break;
         }
+        _windowWeights[i] = weighingFactor;
+    }
+    _windowWeightsType = windowType;
+}
+
+
+void fft_windowing(FFTWindow windowType, FFTDirection dir) {
+    // Weighing factors are computed once before multiple use of FFT
+    if (_windowWeightsType != (int)windowType)
+        computeWindowWeights(windowType);
+
+    for (uint16_t i = 0; i < (_samples >> 1); i++) {
+        float weighingFactor = _windowWeights[i];
         if (dir == FFT_FORWARD) {
             _vReal[i] *= weighingFactor;
             _vReal[_samples - (i + 1)] *= weighingFactor;
@@ -189,6 +216,7 @@ void fft_windowing(FFTWindow windowType, FFTDirection dir) {
         }
     }
 }
+
 
 float fft_majorPeak() {
     float maxY = 0;

@@ -153,6 +153,23 @@ void test_read_frame_adds_up_the_time_it_waits_for_samples(void)
 }
 
 
+// Running each sample through the calibration curve is too slow for every
+// frame, so mic_init() converts every possible reading once.
+void test_read_frame_converts_samples_without_running_the_calibration_again(void)
+{
+    TEST_ASSERT_EQUAL(4096, fake.adc_cali_conversions);
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 4095 - i);
+
+    int mv[FRAME_SAMPLES];
+    mic_read_frame(mv, FRAME_SAMPLES);
+
+    TEST_ASSERT_EQUAL(4096, fake.adc_cali_conversions);
+    TEST_ASSERT_EQUAL(4095, mv[0]);
+    TEST_ASSERT_EQUAL(4095 - FRAME_SAMPLES + 1, mv[FRAME_SAMPLES - 1]);
+}
+
+
 // So the main loop can tell whether it keeps up with the mic.
 void test_frames_the_driver_drops_are_counted(void)
 {
@@ -353,6 +370,7 @@ int main(void)
     RUN_TEST(test_read_frame_keeps_reading_until_the_frame_is_full);
     RUN_TEST(test_read_frame_reads_no_further_than_the_frame);
     RUN_TEST(test_read_frame_adds_up_the_time_it_waits_for_samples);
+    RUN_TEST(test_read_frame_converts_samples_without_running_the_calibration_again);
     RUN_TEST(test_frames_the_driver_drops_are_counted);
     RUN_TEST(test_read_frame_reports_clipping_near_the_adc_rails);
     RUN_TEST(test_read_frame_without_calibration_assumes_3100mv_full_scale);

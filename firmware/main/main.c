@@ -93,8 +93,8 @@ static int64_t floor_logged_us = 0;
 // The time spent on each step of the frames since the last frame log, in µs.
 static struct {
     int frames;
-    int64_t read_us;       // converting samples to mV, not waiting for them
-    int64_t window_us;     // removing DC and applying the window
+    int64_t read_us;       // converting samples, not waiting for them
+    int64_t window_us;
     int64_t fft_us;
     int64_t magnitude_us;
     int64_t busy_us;       // the whole frame, except waiting for samples
@@ -115,7 +115,8 @@ static void time_step(int64_t* total_us, int64_t* since)
 }
 
 
-// Sample one frame from the mic and replace vReal with its FFT bins in mV.
+// Sample one frame from the mic and replace the shown bins of vReal with their
+// levels in mV.  The bins past them are left unfinished, as nothing uses them.
 // Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
 // clipped or the brightest LED would be at full brightness, too quiet if the
 // loudest bin is under a quarter of that.  The 12 dB gap between the two is
@@ -129,25 +130,32 @@ static float read_spectrum(int* voltages, float* vReal, float* vImag)
     bool clipped = mic_read_frame(voltages, N_SAMPLES);
     frame_stats.read_us -= mic_time_waited_us() - waited;
 
+    // Remove the mic's DC level, about half the ADC's range, while converting
+    // the samples, saving fft_dcRemoval()'s two passes over them in floats.
+    int sum = 0;
+    for (int i = 0; i < N_SAMPLES; i++)
+        sum += voltages[i];
+    float mean = (float)sum / N_SAMPLES;
     for (int i = 0; i < N_SAMPLES; i++) {
-        vReal[i] = (float)(voltages[i] - 1650);
+        vReal[i] = voltages[i] - mean;
         vImag[i] = 0;
     }
     time_step(&frame_stats.read_us, &step_start);
 
     // ESP_LOGI(TAG, "raw");
     // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
-    fft_dcRemoval();
     fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
     time_step(&frame_stats.window_us, &step_start);
     fft_compute(FFT_FORWARD);
     time_step(&frame_stats.fft_us, &step_start);
-    fft_complexToMagnitude();
+    int bins = N_DISPLAYED_BINS;
+    fft_complexToMagnitude(bins);
     time_step(&frame_stats.magnitude_us, &step_start);
 
-    for (int i = 0; i < N_SAMPLES; i++) {
-        vReal[i] /= N_SAMPLES / 2 * FFT_WINDOW_GAIN;
-        if (i < N_DISPLAYED_BINS && vReal[i] > peak)
+    float to_mv = 1 / (N_SAMPLES / 2 * FFT_WINDOW_GAIN);
+    for (int i = 0; i < bins; i++) {
+        vReal[i] *= to_mv;
+        if (vReal[i] > peak)
             peak = vReal[i];
     }
 
@@ -155,16 +163,18 @@ static float read_spectrum(int* voltages, float* vReal, float* vImag)
 }
 
 
-// Learn each bin's floor in vFloor from this frame's bins in vReal, in mV,
-// elapsed_us after the last frame, and speedup times faster than normal.  Then
-// follow the mic's gain, which changes by gain_change within a frame or so.
+// Learn each shown bin's floor in vFloor from this frame's bins in vReal, in
+// mV, elapsed_us after the last frame, and speedup times faster than normal.
+// Then follow the mic's gain, which changes by gain_change within a frame or
+// so.
 static void track_floor(const float* vReal, float* vFloor, float gain_change, int64_t elapsed_us, float speedup)
 {
     float seconds = speedup * elapsed_us / 1e6f;
     float rise = DB_TO_RATIO(FLOOR_RISE_DB_PER_S * seconds) * gain_change;
     float fall = DB_TO_RATIO(-FLOOR_FALL_DB_PER_S * seconds) * gain_change;
+    int bins = N_DISPLAYED_BINS;
 
-    for (int i = 0; i < N_SAMPLES; i++) {
+    for (int i = 0; i < bins; i++) {
         vFloor[i] *= vReal[i] > vFloor[i] ? rise : fall;
         if (vFloor[i] < FLOOR_LOWEST_MV)
             vFloor[i] = FLOOR_LOWEST_MV;
@@ -253,17 +263,18 @@ static void log_frames(int64_t now)
 }
 
 
-// Replace each bin in vReal with its LED brightness, and set colours from it.
-// A bin lights once it's FLOOR_MARGIN_DB over its floor in vFloor, and never
-// under FFT_NOISE_FLOOR_MV.  vDecay holds each LED's brightness from the last
-// frame, elapsed_us ago: louder bins show immediately, and quieter ones fade
-// from there.
+// Replace each shown bin in vReal with its LED brightness, and set colours
+// from it.  A bin lights once it's FLOOR_MARGIN_DB over its floor in vFloor,
+// and never under FFT_NOISE_FLOOR_MV.  vDecay holds each LED's brightness from
+// the last frame, elapsed_us ago: louder bins show immediately, and quieter
+// ones fade from there.
 static void spectrum_to_colours(float* vReal, const float* vFloor, float* vDecay, uint8_t* colours, int64_t elapsed_us)
 {
     float decay = expf(-(float)elapsed_us / LED_DECAY_US);
     float margin = DB_TO_RATIO(FLOOR_MARGIN_DB);
+    int bins = N_DISPLAYED_BINS;
 
-    for (int i = 0; i < N_SAMPLES; i++) {
+    for (int i = 0; i < bins; i++) {
         // Scale each bin from its threshold up to full scale to an LED
         // brightness from 0 to 250, so music over a noisy room can still reach
         // full brightness.
@@ -365,7 +376,7 @@ void app_main(void)
         // ESP_LOGI(TAG, "fft");
         // dsps_view(vReal, N_SAMPLES, 64, 10, 0, 255, '-');
 
-        leds_display(colours, N_SAMPLES/2);
+        leds_display(colours, N_DISPLAYED_BINS);
 
         if (now - last_battery_time >= BATTERY_CHECK_US) {
             read_battery();

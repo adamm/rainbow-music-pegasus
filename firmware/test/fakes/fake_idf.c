@@ -259,6 +259,7 @@ esp_err_t adc_cali_delete_scheme_curve_fitting(adc_cali_handle_t cali)
 esp_err_t adc_cali_raw_to_voltage(adc_cali_handle_t cali, int raw, int *voltage)
 {
     TEST_ASSERT_NOT_NULL_MESSAGE(cali, "Calibration used without a calibration scheme");
+    fake.adc_cali_conversions++;
     *voltage = raw;
     return ESP_OK;
 }

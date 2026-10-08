@@ -67,8 +67,9 @@ typedef struct {
 
     // Whether the chip's eFuse holds ADC calibration.  The fake calibration
     // converts each raw reading to the same number of mV, so tests can queue
-    // readings in mV.
+    // readings in mV.  adc_cali_conversions counts the readings converted.
     bool adc_cali_in_efuse;
+    int adc_cali_conversions;
 
     // The last bytes sent to the LED strip, and whether the firmware has yet
     // to wait for them to finish sending.
