@@ -34,9 +34,11 @@ typedef enum {
     CONFIG_PATTERN_C,
 } config_pattern_t;
 
-// Patterns B and C show twice as many bins as A, so they use FFT sizes twice
-// as large to keep the same sample rates and frequency range.  Their bins are
-// half as wide, and their frames twice as long, up to 30.7 ms with 24 LEDs.
+// The pattern at power-on, the starting value of _config_pattern, which
+// config_init() sizes the FFT for.  Patterns B and C show twice as many bins as
+// A, so they use FFT sizes twice as large to keep the same sample rates and
+// frequency range.  Their bins are half as wide, and their frames twice as
+// long, up to 30.7 ms with 24 LEDs.
 #define CONFIG_LEDS_PATTERN            CONFIG_PATTERN_C
 
 #define CONFIG_GPIO_RGB_DATA           3

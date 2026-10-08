@@ -9,7 +9,7 @@
 #include "fake_idf.h"
 #include "unity.h"
 
-#define MAX_SAMPLES 256
+#define MAX_SAMPLES 512
 
 // A bin that every board shows, clear of DC.
 #define TONE_BIN 5
@@ -94,11 +94,12 @@ static void set_floor(float mv)
 // same crowd.
 static uint32_t crowd_state;
 
-// Set up for a board with `leds` LEDs, which config_init() gives an FFT of
-// `samples`.
-static void use_board(int leds, int samples)
+// Set up for a board with `leds` LEDs showing `pattern`, which config_init()
+// gives an FFT of `samples`.
+static void use_board(int leds, config_pattern_t pattern, int samples)
 {
     _config_total_leds = leds;
+    _config_pattern = pattern;
     _config_total_samples = samples;
     fft_init(vReal, vImag, samples, _config_sample_freq_hz);
 }
@@ -114,7 +115,7 @@ void setUp(void)
     heard_clipped = false;
     mic_paused = false;
     checked_with_mic_paused = false;
-    use_board(10, 64);
+    use_board(10, CONFIG_PATTERN_A, 64);
 }
 
 void tearDown(void)
@@ -137,11 +138,17 @@ void test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size(void)
 {
     static const struct {
         int leds;
+        config_pattern_t pattern;
         int samples;
-    } boards[] = { { 10, 64 }, { 16, 128 }, { 24, 256 } };
+    } boards[] = {
+        { 10, CONFIG_PATTERN_A,  64 },
+        { 16, CONFIG_PATTERN_A, 128 },
+        { 24, CONFIG_PATTERN_A, 256 },
+        { 24, CONFIG_PATTERN_B, 512 },
+    };
 
     for (int i = 0; i < sizeof(boards) / sizeof(boards[0]); i++) {
-        use_board(boards[i].leds, boards[i].samples);
+        use_board(boards[i].leds, boards[i].pattern, boards[i].samples);
         hear_tone(TONE_BIN, 100);
 
         read_spectrum(voltages, vReal, vImag);
@@ -210,15 +217,48 @@ void test_clipping_is_too_loud_even_when_the_bins_are_quiet(void)
 }
 
 
+// 10 LEDs show bins 0 to 14 in pattern A, of a 64-sample FFT, and bins 0 to
+// 29 in patterns B and C, of a 128-sample FFT.
+static const struct {
+    config_pattern_t pattern;
+    int samples;
+} ten_led_boards[] = {
+    { CONFIG_PATTERN_A,  64 },
+    { CONFIG_PATTERN_B, 128 },
+    { CONFIG_PATTERN_C, 128 },
+};
+#define N_TEN_LED_BOARDS (sizeof(ten_led_boards) / sizeof(ten_led_boards[0]))
+
+
 void test_tones_above_the_highest_led_are_ignored(void)
 {
-    // 10 LEDs show bins 0 to 14.
-    hear_tone(25, FFT_FULL_SCALE_MV * 2);
+    for (int i = 0; i < N_TEN_LED_BOARDS; i++) {
+        use_board(10, ten_led_boards[i].pattern, ten_led_boards[i].samples);
+        hear_tone(N_DISPLAYED_BINS + 10, FFT_FULL_SCALE_MV * 2);
 
-    read_spectrum(voltages, vReal, vImag);
+        read_spectrum(voltages, vReal, vImag);
 
-    TEST_ASSERT_FALSE(reported_loud);
-    TEST_ASSERT_TRUE(reported_quiet);
+        char message[16];
+        snprintf(message, sizeof(message), "pattern %c", 'A' + ten_led_boards[i].pattern);
+        TEST_ASSERT_FALSE_MESSAGE(reported_loud, message);
+        TEST_ASSERT_TRUE_MESSAGE(reported_quiet, message);
+    }
+}
+
+
+// So the mic's gain fits the brightest LED, wherever it is.
+void test_a_tone_in_the_highest_led_counts_in_every_pattern(void)
+{
+    for (int i = 0; i < N_TEN_LED_BOARDS; i++) {
+        use_board(10, ten_led_boards[i].pattern, ten_led_boards[i].samples);
+        hear_tone(N_DISPLAYED_BINS - 1, FFT_FULL_SCALE_MV * 1.1);
+
+        read_spectrum(voltages, vReal, vImag);
+
+        char message[16];
+        snprintf(message, sizeof(message), "pattern %c", 'A' + ten_led_boards[i].pattern);
+        TEST_ASSERT_TRUE_MESSAGE(reported_loud, message);
+    }
 }
 
 
@@ -526,6 +566,21 @@ void test_the_floor_log_leaves_out_mic_gain_changes(void)
 }
 
 
+// 24 LEDs show the most bins, in patterns B and C.
+void test_the_floor_log_counts_all_72_bins_of_24_leds_in_pattern_b(void)
+{
+    use_board(24, CONFIG_PATTERN_B, 512);
+    int64_t t = fake.now_us;
+    set_floor(10);
+    log_floor(vFloor, 1, t);
+
+    set_floor(20);
+    log_floor(vFloor, 1, t + FLOOR_LOG_US);
+
+    TEST_ASSERT_EQUAL_STRING("main: adjusted the floor up on 72 bins and down on 0, of 72", fake.last_log);
+}
+
+
 void test_the_battery_is_read_with_the_mic_paused(void)
 {
     read_battery();
@@ -545,6 +600,7 @@ int main(void)
     RUN_TEST(test_a_tone_between_a_quarter_and_full_scale_is_neither);
     RUN_TEST(test_clipping_is_too_loud_even_when_the_bins_are_quiet);
     RUN_TEST(test_tones_above_the_highest_led_are_ignored);
+    RUN_TEST(test_a_tone_in_the_highest_led_counts_in_every_pattern);
     RUN_TEST(test_reading_a_frame_returns_how_much_the_mic_gain_changed);
     RUN_TEST(test_bins_at_or_under_the_noise_floor_are_dark);
     RUN_TEST(test_bins_at_or_over_full_scale_are_full_brightness);
@@ -565,6 +621,7 @@ int main(void)
     RUN_TEST(test_the_floor_log_counts_the_bins_whose_floor_moved);
     RUN_TEST(test_the_floor_log_waits_between_lines);
     RUN_TEST(test_the_floor_log_leaves_out_mic_gain_changes);
+    RUN_TEST(test_the_floor_log_counts_all_72_bins_of_24_leds_in_pattern_b);
     RUN_TEST(test_the_battery_is_read_with_the_mic_paused);
     return UNITY_END();
 }

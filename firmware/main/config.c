@@ -53,7 +53,6 @@ void config_init() {
 
     // Patterns B and C show twice as many bins as A, so they take frames twice
     // as large to show the same range at the same sample rate.
-    _config_pattern = CONFIG_LEDS_PATTERN;
     if (_config_pattern != CONFIG_PATTERN_A)
         _config_total_samples *= 2;
 

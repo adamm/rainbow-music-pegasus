@@ -237,8 +237,9 @@ static void leds_display_pattern_b(uint8_t* values, int total_values) {
 
 
 // Pattern C: the lowest third of the bins light every LED's red in strip
-// order, the middle third their green, and the top third their blue.  So bass
-// is red, mids green and treble blue, and the wings show alternate bins.
+// order, the middle third their green, and the top third their blue.  So each
+// colour shows a third of the frequency range along the wings, and the wings
+// show alternate bins.
 static void leds_display_pattern_c(uint8_t* values, int total_values) {
     int leds = _config_total_leds;
 
