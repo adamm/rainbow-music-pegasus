@@ -33,8 +33,6 @@ const static char *TAG = "main";
 // A and three per LED in the others.
 #define N_DISPLAYED_BINS config_displayed_bins()
 
-// Average weight of the Blackman window, which scales every FFT bin.
-#define FFT_WINDOW_GAIN 0.42323f
 // Each bin is converted to the amplitude, in mV at the ADC, of a sine wave that
 // would produce it, so the LEDs behave the same whatever the frame size.  Bins
 // under the noise floor stay dark so amp and ADC hiss doesn't flicker the LEDs,
@@ -93,8 +91,8 @@ static int64_t floor_logged_us = 0;
 // The time spent on each step of the frames since the last frame log, in µs.
 static struct {
     int frames;
-    int64_t read_us;       // converting samples, not waiting for them
-    int64_t window_us;
+    int64_t read_us;       // converting samples to mV, not waiting for them
+    int64_t window_us;     // removing DC and applying the window
     int64_t fft_us;
     int64_t magnitude_us;
     int64_t busy_us;       // the whole frame, except waiting for samples
@@ -115,46 +113,31 @@ static void time_step(int64_t* total_us, int64_t* since)
 }
 
 
-// Sample one frame from the mic and replace the shown bins of vReal with their
-// levels in mV.  The bins past them are left unfinished, as nothing uses them.
+// Sample one frame from the mic and put the shown bins' levels, in mV, in
+// vReal.  The bins past them are left as they were, as nothing uses them.
 // Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
 // clipped or the brightest LED would be at full brightness, too quiet if the
 // loudest bin is under a quarter of that.  The 12 dB gap between the two is
 // several sensitivity steps wide, so the gain settles instead of hunting.
 // Returns how much the mic's gain changed, as a ratio.
-static float read_spectrum(int* voltages, float* vReal, float* vImag)
+static float read_spectrum(int* voltages, float* vReal)
 {
     float peak = 0;
     int64_t step_start = esp_timer_get_time();
     int64_t waited = mic_time_waited_us();
     bool clipped = mic_read_frame(voltages, N_SAMPLES);
     frame_stats.read_us -= mic_time_waited_us() - waited;
-
-    // Remove the mic's DC level, about half the ADC's range, while converting
-    // the samples, saving fft_dcRemoval()'s two passes over them in floats.
-    int sum = 0;
-    for (int i = 0; i < N_SAMPLES; i++)
-        sum += voltages[i];
-    float mean = (float)sum / N_SAMPLES;
-    for (int i = 0; i < N_SAMPLES; i++) {
-        vReal[i] = voltages[i] - mean;
-        vImag[i] = 0;
-    }
     time_step(&frame_stats.read_us, &step_start);
 
-    // ESP_LOGI(TAG, "raw");
-    // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
-    fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
+    fft_load(voltages);
     time_step(&frame_stats.window_us, &step_start);
-    fft_compute(FFT_FORWARD);
+    fft_compute();
     time_step(&frame_stats.fft_us, &step_start);
     int bins = N_DISPLAYED_BINS;
-    fft_complexToMagnitude(bins);
+    fft_magnitudes(vReal, bins);
     time_step(&frame_stats.magnitude_us, &step_start);
 
-    float to_mv = 1 / (N_SAMPLES / 2 * FFT_WINDOW_GAIN);
     for (int i = 0; i < bins; i++) {
-        vReal[i] *= to_mv;
         if (vReal[i] > peak)
             peak = vReal[i];
     }
@@ -311,14 +294,12 @@ void app_main(void)
     config_init();
     int* voltages = malloc(sizeof(int) * _config_total_samples);
     float* vReal = malloc(sizeof(float) * _config_total_samples);
-    float* vImag = malloc(sizeof(float) * _config_total_samples);
     float* vDecay = malloc(sizeof(float) * _config_total_samples);
     float* vFloor = malloc(sizeof(float) * _config_total_samples);
     uint8_t* colours = malloc(sizeof(uint8_t) * _config_total_samples);
 
     bzero(voltages, sizeof(int) * _config_total_samples);
     bzero(vReal, sizeof(float) * _config_total_samples);
-    bzero(vImag, sizeof(float) * _config_total_samples);
     bzero(vDecay, sizeof(float) * _config_total_samples);
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
     for (int i = 0; i < _config_total_samples; i++)
@@ -331,7 +312,7 @@ void app_main(void)
     mic_init();
     leds_init();
     leds_scanning_start();
-    fft_init(vReal, vImag, N_SAMPLES, _config_sample_freq_hz);
+    fft_init(N_SAMPLES);
 
     uint64_t start_settle_time = esp_timer_get_time();
     int64_t last_frame_time = start_settle_time;
@@ -340,7 +321,7 @@ void app_main(void)
     // learn the room, before the light show starts.
     ESP_LOGI(TAG, "Settling mic sensitivity...");
     while (esp_timer_get_time()-start_settle_time < 3000000) {
-        float gain_change = read_spectrum(voltages, vReal, vImag);
+        float gain_change = read_spectrum(voltages, vReal);
         int64_t now = esp_timer_get_time();
         track_floor(vReal, vFloor, gain_change, now - last_frame_time, FLOOR_SETTLE_SPEEDUP);
         log_floor(vFloor, gain_change, now);
@@ -353,7 +334,7 @@ void app_main(void)
     int64_t last_battery_time = esp_timer_get_time();
     start_frame_log(last_battery_time);
     while (1) {
-        float gain_change = read_spectrum(voltages, vReal, vImag);
+        float gain_change = read_spectrum(voltages, vReal);
 
         // Base the floor and the fade on the time since the last frame, so
         // their speed doesn't depend on the frame size or on frames the driver

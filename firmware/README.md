@@ -191,7 +191,7 @@ All pins are defined in [`main/config.h`](main/config.h).
 | `config.c/h`          | Pin assignments, jumper-based LED count, LED pattern, FFT size, sample rate and top frequency |
 | `mic.c/h`             | Continuous (DMA) sampling of the microphone, with ADC calibration, and automatic mic sensitivity |
 | `battery.c/h`         | Battery voltage readings, smoothing, and the low-battery decision |
-| `fft.c/h`             | FFT, windowing and magnitude (C port of arduinoFFT, GPL-3.0) |
+| `fft.c/h`             | Fixed-point FFT of each frame: DC removal, Blackman window, FFT and bin levels in mV.  The ESP32-C3 has no FPU, so integer maths is much faster |
 | `leds.c/h`            | WS2812B output over RMT in each LED pattern, startup scanning animation, low-battery blink |
 | `led_strip_encoder.c/h` | RMT encoder for WS2812B (from the ESP-IDF examples) |
 | `digipot.c/h`         | SPI driver for the MCP41050 digital potentiometer |
@@ -319,9 +319,9 @@ Useful messages appear in the serial monitor:
   long each lasts, how many the mic dropped because the frame before was still
   being processed, and how long a frame took to process, on average and at
   most.  The average is split into steps: reading the samples (converting them
-  to mV and removing their DC level, not waiting for them), the window, the
-  FFT, the magnitudes, and the rest (the floor, the colours, sending them to
-  the LEDs, the battery check and logging).  The light show keeps up while a frame takes
+  to mV, not waiting for them), the window (with removing DC), the FFT, the
+  magnitudes, and the rest (the floor, the colours, sending them to the LEDs,
+  the battery check and logging).  The light show keeps up while a frame takes
   less time to process than to record.  Once it doesn't, the mic drops frames,
   and the LEDs miss that sound.
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`

@@ -95,7 +95,6 @@ bool battery_check(void)
 
 static int voltages[MAX_SAMPLES];
 static float vReal[MAX_SAMPLES];
-static float vImag[MAX_SAMPLES];
 static float vDecay[MAX_SAMPLES];
 static float vFloor[MAX_SAMPLES];
 static uint8_t colours[MAX_SAMPLES];
@@ -118,7 +117,7 @@ static void use_board(int leds, config_pattern_t pattern, int samples)
     _config_total_leds = leds;
     _config_pattern = pattern;
     _config_total_samples = samples;
-    fft_init(vReal, vImag, samples, _config_sample_freq_hz);
+    fft_init(samples);
 }
 
 void setUp(void)
@@ -172,7 +171,7 @@ void test_a_tone_reads_as_its_amplitude_in_mv_at_every_frame_size(void)
         use_board(boards[i].leds, boards[i].pattern, boards[i].samples);
         hear_tone(TONE_BIN, 100);
 
-        read_spectrum(voltages, vReal, vImag);
+        read_spectrum(voltages, vReal);
 
         char message[32];
         snprintf(message, sizeof(message), "%d-sample frame", boards[i].samples);
@@ -185,7 +184,7 @@ void test_a_tone_leaves_shown_bins_away_from_it_under_the_noise_floor(void)
 {
     hear_tone(TONE_BIN, FFT_FULL_SCALE_MV);
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     for (int i = 0; i < N_DISPLAYED_BINS; i++) {
         if (abs(i - TONE_BIN) > 3)
@@ -198,7 +197,7 @@ void test_silence_is_too_quiet(void)
 {
     hear_tone(TONE_BIN, 0);
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     TEST_ASSERT_FALSE(reported_loud);
     TEST_ASSERT_TRUE(reported_quiet);
@@ -209,7 +208,7 @@ void test_a_tone_over_full_scale_is_too_loud(void)
 {
     hear_tone(TONE_BIN, FFT_FULL_SCALE_MV * 1.1);
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     TEST_ASSERT_TRUE(reported_loud);
     TEST_ASSERT_FALSE(reported_quiet);
@@ -220,7 +219,7 @@ void test_a_tone_between_a_quarter_and_full_scale_is_neither(void)
 {
     hear_tone(TONE_BIN, FFT_FULL_SCALE_MV / 2);
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     TEST_ASSERT_FALSE(reported_loud);
     TEST_ASSERT_FALSE(reported_quiet);
@@ -232,7 +231,7 @@ void test_clipping_is_too_loud_even_when_the_bins_are_quiet(void)
     hear_tone(TONE_BIN, 0);
     heard_clipped = true;
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     TEST_ASSERT_TRUE(reported_loud);
 }
@@ -257,7 +256,7 @@ void test_tones_above_the_highest_led_are_ignored(void)
         use_board(10, ten_led_boards[i].pattern, ten_led_boards[i].samples);
         hear_tone(N_DISPLAYED_BINS + 10, FFT_FULL_SCALE_MV * 2);
 
-        read_spectrum(voltages, vReal, vImag);
+        read_spectrum(voltages, vReal);
 
         char message[16];
         snprintf(message, sizeof(message), "pattern %c", 'A' + ten_led_boards[i].pattern);
@@ -274,7 +273,7 @@ void test_a_tone_in_the_highest_led_counts_in_every_pattern(void)
         use_board(10, ten_led_boards[i].pattern, ten_led_boards[i].samples);
         hear_tone(N_DISPLAYED_BINS - 1, FFT_FULL_SCALE_MV * 1.1);
 
-        read_spectrum(voltages, vReal, vImag);
+        read_spectrum(voltages, vReal);
 
         char message[16];
         snprintf(message, sizeof(message), "pattern %c", 'A' + ten_led_boards[i].pattern);
@@ -289,7 +288,7 @@ void test_reading_a_frame_returns_how_much_the_mic_gain_changed(void)
     hear_tone(TONE_BIN, FFT_FULL_SCALE_MV * 1.1);
     gain_change = 0.75f;
 
-    TEST_ASSERT_EQUAL_FLOAT(0.75f, read_spectrum(voltages, vReal, vImag));
+    TEST_ASSERT_EQUAL_FLOAT(0.75f, read_spectrum(voltages, vReal));
 }
 
 
@@ -643,7 +642,7 @@ void test_the_frame_log_leaves_waiting_for_the_mic_out_of_reading_a_frame(void)
     hear_tone(TONE_BIN, 0);
     read_wait_us = 6400;
 
-    read_spectrum(voltages, vReal, vImag);
+    read_spectrum(voltages, vReal);
 
     TEST_ASSERT_EQUAL_INT64(0, frame_stats.read_us);
     TEST_ASSERT_EQUAL_INT64(0, frame_stats.window_us);

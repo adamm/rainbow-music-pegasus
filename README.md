@@ -139,5 +139,4 @@ ready Spring 2027 as v1.2.
 
 ## License
 
-See [LICENSE.md](LICENSE.md) (Apache 2.0).  `firmware/main/fft.c` is a port of
-arduinoFFT and is licensed under GPL-3.0.
+See [LICENSE.md](LICENSE.md) (Apache 2.0).
