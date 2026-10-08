@@ -29,11 +29,15 @@ const static char *TAG = "main";
 
 
 #define N_SAMPLES _config_total_samples
-// leds_display() only shows the lowest bins, three per pair of LEDs.
-#define N_DISPLAYED_BINS (_config_total_leds * 3 / 2)
+// Each frame overlaps the one before by half, so the LEDs update every half
+// frame, every 15.4 ms with 24 LEDs in pattern C.  Updating only once a frame
+// sampled a held note's level too slowly to follow quick changes in it, such
+// as close partials beating, and turned them into a slow flutter.
+#define N_HOP (N_SAMPLES / 2)
+// leds_display() only shows the lowest bins, three per pair of LEDs in pattern
+// A and three per LED in the others.
+#define N_DISPLAYED_BINS config_displayed_bins()
 
-// Average weight of the Blackman window, which scales every FFT bin.
-#define FFT_WINDOW_GAIN 0.42323f
 // Each bin is converted to the amplitude, in mV at the ADC, of a sine wave that
 // would produce it, so the LEDs behave the same whatever the frame size.  Bins
 // under the noise floor stay dark so amp and ADC hiss doesn't flicker the LEDs,
@@ -79,37 +83,85 @@ const static char *TAG = "main";
 // next frame by up to a frame, which is too brief and rare to notice.
 #define BATTERY_CHECK_US 10000000
 
+// How often to log how long the light show takes to process a frame, and how
+// many hops of new samples the mic dropped because the frame before was still
+// being processed.  The loop keeps up while processing a frame takes less time
+// than recording a hop.
+#define FRAME_LOG_US         1000000
+
 // Each shown bin's floor at the last floor log, and when that was, 0 for never.
-static float floor_logged[CONFIG_MAX_LEDS * 3 / 2];
+static float floor_logged[CONFIG_MAX_LEDS * 3];
 static int64_t floor_logged_us = 0;
 
+// Whether the samples kept from the last frame are out of date, so the next
+// frame must be read whole: at power-on, and after the mic pauses.  And
+// mic_frames_dropped() after the last frame was read, as a dropped hop leaves
+// a gap after them too.
+static bool frame_stale = true;
+static uint32_t frame_dropped = 0;
 
-// Sample one frame from the mic and replace vReal with its FFT bins in mV.
+// The time spent on each step of the frames since the last frame log, in µs.
+static struct {
+    int frames;
+    int64_t read_us;       // converting samples to mV, not waiting for them
+    int64_t window_us;     // removing DC and applying the window
+    int64_t fft_us;
+    int64_t magnitude_us;
+    int64_t busy_us;       // the whole frame, except waiting for samples
+    int64_t max_busy_us;
+    int64_t frame_end_us;  // when the last frame ended
+    int64_t waited_us;     // mic_time_waited_us() then
+    uint32_t dropped;      // mic_frames_dropped() at the last log
+    int64_t logged_us;
+} frame_stats;
+
+
+// Add the time since *since to *total_us, and move *since on to now.
+static void time_step(int64_t* total_us, int64_t* since)
+{
+    int64_t now = esp_timer_get_time();
+    *total_us += now - *since;
+    *since = now;
+}
+
+
+// Read a hop of samples from the mic into the end of the frame in voltages,
+// after the newest samples of the last frame, and put the shown bins' levels,
+// in mV, in vReal.  The bins past them are left as they were, as nothing uses
+// them.
 // Then let the mic adjust its sensitivity to fit the LEDs: too loud if the ADC
 // clipped or the brightest LED would be at full brightness, too quiet if the
 // loudest bin is under a quarter of that.  The 12 dB gap between the two is
 // several sensitivity steps wide, so the gain settles instead of hunting.
 // Returns how much the mic's gain changed, as a ratio.
-static float read_spectrum(int* voltages, float* vReal, float* vImag)
+static float read_spectrum(int* voltages, float* vReal)
 {
     float peak = 0;
-    bool clipped = mic_read_frame(voltages, N_SAMPLES);
-
-    for (int i = 0; i < N_SAMPLES; i++) {
-        vReal[i] = (float)(voltages[i] - 1650);
-        vImag[i] = 0;
+    int64_t step_start = esp_timer_get_time();
+    int64_t waited = mic_time_waited_us();
+    bool clipped = false;
+    if (frame_stale || mic_frames_dropped() != frame_dropped) {
+        for (int start = 0; start < N_SAMPLES; start += N_HOP)
+            clipped |= mic_read_frame(voltages + start, N_HOP);
+        frame_stale = false;
+    } else {
+        memmove(voltages, voltages + N_HOP, (N_SAMPLES - N_HOP) * sizeof(int));
+        clipped = mic_read_frame(voltages + N_SAMPLES - N_HOP, N_HOP);
     }
+    frame_dropped = mic_frames_dropped();
+    frame_stats.read_us -= mic_time_waited_us() - waited;
+    time_step(&frame_stats.read_us, &step_start);
 
-    // ESP_LOGI(TAG, "raw");
-    // dsps_view(vReal, N_SAMPLES, 64, 10, -100, 100, '-');
-    fft_dcRemoval();
-    fft_windowing(FFT_WIN_TYP_BLACKMAN, FFT_FORWARD);
-    fft_compute(FFT_FORWARD);
-    fft_complexToMagnitude();
+    fft_load(voltages);
+    time_step(&frame_stats.window_us, &step_start);
+    fft_compute();
+    time_step(&frame_stats.fft_us, &step_start);
+    int bins = N_DISPLAYED_BINS;
+    fft_magnitudes(vReal, bins);
+    time_step(&frame_stats.magnitude_us, &step_start);
 
-    for (int i = 0; i < N_SAMPLES; i++) {
-        vReal[i] /= N_SAMPLES / 2 * FFT_WINDOW_GAIN;
-        if (i < N_DISPLAYED_BINS && vReal[i] > peak)
+    for (int i = 0; i < bins; i++) {
+        if (vReal[i] > peak)
             peak = vReal[i];
     }
 
@@ -117,16 +169,18 @@ static float read_spectrum(int* voltages, float* vReal, float* vImag)
 }
 
 
-// Learn each bin's floor in vFloor from this frame's bins in vReal, in mV,
-// elapsed_us after the last frame, and speedup times faster than normal.  Then
-// follow the mic's gain, which changes by gain_change within a frame or so.
+// Learn each shown bin's floor in vFloor from this frame's bins in vReal, in
+// mV, elapsed_us after the last frame, and speedup times faster than normal.
+// Then follow the mic's gain, which changes by gain_change within a frame or
+// so.
 static void track_floor(const float* vReal, float* vFloor, float gain_change, int64_t elapsed_us, float speedup)
 {
     float seconds = speedup * elapsed_us / 1e6f;
     float rise = DB_TO_RATIO(FLOOR_RISE_DB_PER_S * seconds) * gain_change;
     float fall = DB_TO_RATIO(-FLOOR_FALL_DB_PER_S * seconds) * gain_change;
+    int bins = N_DISPLAYED_BINS;
 
-    for (int i = 0; i < N_SAMPLES; i++) {
+    for (int i = 0; i < bins; i++) {
         vFloor[i] *= vReal[i] > vFloor[i] ? rise : fall;
         if (vFloor[i] < FLOOR_LOWEST_MV)
             vFloor[i] = FLOOR_LOWEST_MV;
@@ -163,17 +217,70 @@ static void log_floor(const float* vFloor, float gain_change, int64_t now)
 }
 
 
-// Replace each bin in vReal with its LED brightness, and set colours from it.
-// A bin lights once it's FLOOR_MARGIN_DB over its floor in vFloor, and never
-// under FFT_NOISE_FLOOR_MV.  vDecay holds each LED's brightness from the last
-// frame, elapsed_us ago: louder bins show immediately, and quieter ones fade
-// from there.
+// Start timing the light show's frames, from `now`.
+static void start_frame_log(int64_t now)
+{
+    memset(&frame_stats, 0, sizeof(frame_stats));
+    frame_stats.frame_end_us = now;
+    frame_stats.waited_us = mic_time_waited_us();
+    frame_stats.dropped = mic_frames_dropped();
+    frame_stats.logged_us = now;
+}
+
+
+// The average of total_us over the frames since the last frame log, in ms.
+static float ms_per_frame(int64_t total_us)
+{
+    return total_us / 1000.0f / frame_stats.frames;
+}
+
+
+// Count a frame of the light show that ended at `now`.  Every FRAME_LOG_US,
+// log how long frames took to process, step by step, and how many hops the
+// mic dropped.  The rest is the floor, the colours, sending them to the LEDs, the
+// battery check and logging.
+static void log_frames(int64_t now)
+{
+    int64_t waited = mic_time_waited_us();
+    int64_t busy = now - frame_stats.frame_end_us - (waited - frame_stats.waited_us);
+
+    frame_stats.frames++;
+    frame_stats.busy_us += busy;
+    if (busy > frame_stats.max_busy_us)
+        frame_stats.max_busy_us = busy;
+    frame_stats.frame_end_us = now;
+    frame_stats.waited_us = waited;
+
+    if (now - frame_stats.logged_us < FRAME_LOG_US)
+        return;
+
+    uint32_t dropped = mic_frames_dropped();
+    int64_t steps_us = frame_stats.read_us + frame_stats.window_us + frame_stats.fft_us + frame_stats.magnitude_us;
+    ESP_LOGI(TAG, "%d frames of %.1f ms, %.1f ms apart, %d dropped, %.1f ms busy each (max %.1f): "
+             "read %.1f, window %.1f, FFT %.1f, magnitude %.1f, rest %.1f",
+             frame_stats.frames, N_SAMPLES * 1000.0f / _config_sample_freq_hz,
+             N_HOP * 1000.0f / _config_sample_freq_hz, (int)(dropped - frame_stats.dropped),
+             ms_per_frame(frame_stats.busy_us), frame_stats.max_busy_us / 1000.0f,
+             ms_per_frame(frame_stats.read_us), ms_per_frame(frame_stats.window_us),
+             ms_per_frame(frame_stats.fft_us), ms_per_frame(frame_stats.magnitude_us),
+             ms_per_frame(frame_stats.busy_us - steps_us));
+
+    start_frame_log(now);
+}
+
+
+// Replace each shown bin in vReal with its LED brightness, and set colours
+// from it.  A bin lights once it's FLOOR_MARGIN_DB over its floor in vFloor,
+// and never under FFT_NOISE_FLOOR_MV.  vDecay holds each LED's brightness from
+// the last frame, elapsed_us ago: louder bins show immediately, and quieter
+// ones fade from there.
 static void spectrum_to_colours(float* vReal, const float* vFloor, float* vDecay, uint8_t* colours, int64_t elapsed_us)
 {
     float decay = expf(-(float)elapsed_us / LED_DECAY_US);
     float margin = DB_TO_RATIO(FLOOR_MARGIN_DB);
+    int bins = N_DISPLAYED_BINS;
 
-    for (int i = 0; i < N_SAMPLES; i++) {
+    for (int i = 0; i < bins; i++) {
         // Scale each bin from its threshold up to full scale to an LED
         // brightness from 0 to 250, so music over a noisy room can still reach
         // full brightness.
@@ -196,12 +303,15 @@ static void spectrum_to_colours(float* vReal, const float* vFloor, float* vDecay
 
 
 // Read the battery, and have the LEDs warn if it's low.  ADC1 can't take a
-// battery reading while it samples the mic continuously, so pause the mic for it.
+// battery reading while it samples the mic continuously, so pause the mic for
+// it.  The samples kept from the last frame end before the pause, so read the
+// next frame whole.
 static void read_battery(void)
 {
     mic_pause();
     leds_show_low_battery(battery_check());
     mic_resume();
+    frame_stale = true;
 }
 
 
@@ -210,14 +320,12 @@ void app_main(void)
     config_init();
     int* voltages = malloc(sizeof(int) * _config_total_samples);
     float* vReal = malloc(sizeof(float) * _config_total_samples);
-    float* vImag = malloc(sizeof(float) * _config_total_samples);
     float* vDecay = malloc(sizeof(float) * _config_total_samples);
     float* vFloor = malloc(sizeof(float) * _config_total_samples);
     uint8_t* colours = malloc(sizeof(uint8_t) * _config_total_samples);
 
     bzero(voltages, sizeof(int) * _config_total_samples);
     bzero(vReal, sizeof(float) * _config_total_samples);
-    bzero(vImag, sizeof(float) * _config_total_samples);
     bzero(vDecay, sizeof(float) * _config_total_samples);
     bzero(colours, sizeof(uint8_t) * _config_total_samples);
     for (int i = 0; i < _config_total_samples; i++)
@@ -227,10 +335,10 @@ void app_main(void)
     battery_init();
     // The mic isn't sampling yet, so ADC1 is free for the first battery reading.
     leds_show_low_battery(battery_check());
-    mic_init();
+    mic_init(N_HOP);
     leds_init();
     leds_scanning_start();
-    fft_init(vReal, vImag, N_SAMPLES, _config_sample_freq_hz);
+    fft_init(N_SAMPLES);
 
     uint64_t start_settle_time = esp_timer_get_time();
     int64_t last_frame_time = start_settle_time;
@@ -239,7 +347,7 @@ void app_main(void)
     // learn the room, before the light show starts.
     ESP_LOGI(TAG, "Settling mic sensitivity...");
     while (esp_timer_get_time()-start_settle_time < 3000000) {
-        float gain_change = read_spectrum(voltages, vReal, vImag);
+        float gain_change = read_spectrum(voltages, vReal);
         int64_t now = esp_timer_get_time();
         track_floor(vReal, vFloor, gain_change, now - last_frame_time, FLOOR_SETTLE_SPEEDUP);
         log_floor(vFloor, gain_change, now);
@@ -250,8 +358,9 @@ void app_main(void)
 
     // Begin light show
     int64_t last_battery_time = esp_timer_get_time();
+    start_frame_log(last_battery_time);
     while (1) {
-        float gain_change = read_spectrum(voltages, vReal, vImag);
+        float gain_change = read_spectrum(voltages, vReal);
 
         // Base the floor and the fade on the time since the last frame, so
         // their speed doesn't depend on the frame size or on frames the driver
@@ -274,12 +383,14 @@ void app_main(void)
         // ESP_LOGI(TAG, "fft");
         // dsps_view(vReal, N_SAMPLES, 64, 10, 0, 255, '-');
 
-        leds_display(colours, N_SAMPLES/2);
+        leds_display(colours, N_DISPLAYED_BINS);
 
         if (now - last_battery_time >= BATTERY_CHECK_US) {
             read_battery();
             last_battery_time = now;
         }
+
+        log_frames(esp_timer_get_time());
     }
 
     mic_stop();

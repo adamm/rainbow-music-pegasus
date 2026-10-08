@@ -24,9 +24,23 @@ typedef struct {
     adc_digi_output_format_t format;
 } adc_continuous_config_t;
 
+typedef struct {
+    uint8_t *conv_frame_buffer;
+    uint32_t size;
+} adc_continuous_evt_data_t;
+
+typedef bool (*adc_continuous_callback_t)(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data);
+
+typedef struct {
+    adc_continuous_callback_t on_conv_done;
+    adc_continuous_callback_t on_pool_ovf;
+} adc_continuous_evt_cbs_t;
+
 esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_config, adc_continuous_handle_t *ret_handle);
 esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_continuous_config_t *config);
+esp_err_t adc_continuous_register_event_callbacks(adc_continuous_handle_t handle, const adc_continuous_evt_cbs_t *cbs, void *user_data);
 esp_err_t adc_continuous_start(adc_continuous_handle_t handle);
 esp_err_t adc_continuous_read(adc_continuous_handle_t handle, uint8_t *buf, uint32_t length_max, uint32_t *out_length, uint32_t timeout_ms);
 esp_err_t adc_continuous_stop(adc_continuous_handle_t handle);
+esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle);
 esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle);

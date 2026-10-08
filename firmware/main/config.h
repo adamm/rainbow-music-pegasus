@@ -20,6 +20,27 @@
 // C41, -3 dB at 4.8 kHz) dims the highest LEDs.
 #define CONFIG_LEDS_TOP_FREQ_HZ        2344
 
+// How leds_display() lays the FFT bins out on the LEDs' colour channels.  Each
+// pair of LEDs is the same place on the right (even index) and left wing.
+typedef enum {
+    // Three bins per pair, lowest first: green, red, blue on the right LED,
+    // and the same bins on the left with the channels rotated.
+    CONFIG_PATTERN_A,
+    // One bin per channel, six per pair, lowest first: the right then left
+    // LED's red, then their green, then their blue.
+    CONFIG_PATTERN_B,
+    // One bin per channel: the lowest third light every LED's red in strip
+    // order, the middle third their green, and the top third their blue.
+    CONFIG_PATTERN_C,
+} config_pattern_t;
+
+// The pattern at power-on, the starting value of _config_pattern, which
+// config_init() sizes the FFT for.  Patterns B and C show twice as many bins as
+// A, so they use FFT sizes twice as large to keep the same sample rates and
+// frequency range.  Their bins are half as wide, and their frames twice as
+// long, up to 30.7 ms with 24 LEDs.
+#define CONFIG_LEDS_PATTERN            CONFIG_PATTERN_C
+
 #define CONFIG_GPIO_RGB_DATA           3
 
 #define CONFIG_GPIO_TOTAL_LEDS_ADD_2   7
@@ -34,7 +55,9 @@
 #define CONFIG_GPIO_DIGIPOT_CLK       19
 
 extern uint8_t _config_total_leds;
+extern config_pattern_t _config_pattern;
 extern uint16_t _config_total_samples;
 extern uint32_t _config_sample_freq_hz;
 
 void config_init();
+uint16_t config_displayed_bins(void);

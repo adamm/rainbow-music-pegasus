@@ -34,8 +34,9 @@ const static char *TAG = "mic";
 // gain above 0 at code 0.
 #define MIC_WIPER_RESISTANCE_CODES  0.35f
 
-// A frame lasts LEDs * 1.5 / CONFIG_LEDS_TOP_FREQ_HZ, at most 15.4 ms at the
-// default top frequency, so waiting this long means the ADC has stopped.
+// A frame lasts the number of shown bins / CONFIG_LEDS_TOP_FREQ_HZ, at most
+// 30.7 ms at the default top frequency, so waiting this long means the ADC has
+// stopped.
 #define MIC_READ_TIMEOUT_MS     1000
 
 static bool mic_calibrated = false;
@@ -43,6 +44,14 @@ adc_continuous_handle_t mic_handle;
 adc_cali_handle_t mic_cali_channel_handle = NULL;
 static uint8_t* mic_frame = NULL;
 static int mic_sensitivity = 0;
+// Since mic_init(), how many frames the driver dropped because the last one
+// was still unread, and how long mic_read_frame() has waited for samples.
+static volatile uint32_t mic_dropped_frames = 0;
+static int64_t mic_waited_us = 0;
+// The mV each raw reading stands for, filled in by mic_init().  Running each
+// sample through the calibration curve took about 9 µs, 4.7 ms of each 30.7 ms
+// frame with 24 LEDs in pattern C, so mic_read_frame() looks them up instead.
+static int16_t mic_raw_mv[1 << SOC_ADC_DIGI_MAX_BITWIDTH];
 
 
 static void mic_sensitivity_set(int sensitivity) {
@@ -115,15 +124,37 @@ void mic_calibration_deinit(adc_cali_handle_t handle)
 }
 
 
+static int mic_raw_to_voltage(int adc_raw) {
+    int voltage;
+
+    if (mic_cali_channel_handle) {
+        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
+    } else {
+        voltage = (adc_raw * 3100) / 4095;
+    }
+
+    return voltage;
+}
+
+
+// Called from the ADC's interrupt when a frame finishes while the last one is
+// still unread.  flush_pool drops the unread one.
+static bool mic_on_pool_overflow(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data) {
+    mic_dropped_frames++;
+    return false;
+}
+
+
 // The ADC samples the mic continuously by DMA, so the sample timing is set by
 // hardware and can't be disturbed by other tasks or interrupts.  Requires
-// config_init() to have been called first to size the frame and set the rate.
-void mic_init(void) {
-    uint32_t frame_size = _config_total_samples * SOC_ADC_DIGI_RESULT_BYTES;
+// config_init() to have been called first to set the rate.  The driver hands
+// over frame_samples at a time, half an FFT frame.
+void mic_init(int frame_samples) {
+    uint32_t frame_size = frame_samples * SOC_ADC_DIGI_RESULT_BYTES;
 
-    // The driver hands over one FFT frame at a time and keeps only the newest
-    // one.  If the main loop falls behind, older frames are dropped, so the
-    // LEDs never lag the sound by more than a frame.
+    // The driver keeps only the newest frame.  If the main loop falls behind,
+    // older frames are dropped, so the LEDs never lag the sound by more than a
+    // frame.
     adc_continuous_handle_cfg_t handle_config = {
         .max_store_buf_size = frame_size,
         .conv_frame_size = frame_size,
@@ -146,28 +177,23 @@ void mic_init(void) {
     };
     ESP_ERROR_CHECK(adc_continuous_config(mic_handle, &adc_config));
 
+    adc_continuous_evt_cbs_t callbacks = {
+        .on_pool_ovf = mic_on_pool_overflow,
+    };
+    ESP_ERROR_CHECK(adc_continuous_register_event_callbacks(mic_handle, &callbacks, NULL));
+
     mic_frame = malloc(frame_size);
     assert(mic_frame);
 
     mic_calibration_init(CONFIG_MIC_UNIT, CONFIG_MIC_CHANNEL, CONFIG_MIC_ATTEN, &mic_cali_channel_handle);
+    // Takes about 40 ms, once, while the LEDs are still dark.
+    for (int raw = 0; raw < (1 << SOC_ADC_DIGI_MAX_BITWIDTH); raw++)
+        mic_raw_mv[raw] = mic_raw_to_voltage(raw);
 
     // Requires digipot_init() to have been called first.
     mic_sensitivity_set(MIC_SENSITIVITY_INIT);
 
     ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
-}
-
-
-static int mic_raw_to_voltage(int adc_raw) {
-    int voltage;
-
-    if (mic_cali_channel_handle) {
-        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(mic_cali_channel_handle, adc_raw, &voltage));
-    } else {
-        voltage = (adc_raw * 3100) / 4095;
-    }
-
-    return voltage;
 }
 
 
@@ -183,7 +209,9 @@ bool mic_read_frame(int* voltages, int total_samples) {
         uint32_t wanted = (total_samples - n) * SOC_ADC_DIGI_RESULT_BYTES;
 
         // The driver can return part of a frame, so keep reading until it's full.
+        int64_t start = esp_timer_get_time();
         ESP_ERROR_CHECK(adc_continuous_read(mic_handle, mic_frame, wanted, &length, MIC_READ_TIMEOUT_MS));
+        mic_waited_us += esp_timer_get_time() - start;
 
         for (uint32_t i = 0; i < length; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t* result = (adc_digi_output_data_t*)&mic_frame[i];
@@ -191,7 +219,7 @@ bool mic_read_frame(int* voltages, int total_samples) {
             // Skip the occasional invalid result, which reports a bogus channel.
             if (result->type2.channel != CONFIG_MIC_CHANNEL)
                 continue;
-            int voltage = mic_raw_to_voltage(result->type2.data);
+            int voltage = mic_raw_mv[result->type2.data];
             if (voltage <= MIC_CLIP_LOW_MV || voltage >= MIC_CLIP_HIGH_MV)
                 clipped = true;
             voltages[n++] = voltage;
@@ -199,6 +227,19 @@ bool mic_read_frame(int* voltages, int total_samples) {
     }
 
     return clipped;
+}
+
+
+// How many frames the driver has dropped since mic_init() because the one
+// before was still unread, so the LEDs never saw that sound.
+uint32_t mic_frames_dropped(void) {
+    return mic_dropped_frames;
+}
+
+
+// How long mic_read_frame() has waited for samples since mic_init(), in µs.
+int64_t mic_time_waited_us(void) {
+    return mic_waited_us;
 }
 
 
@@ -258,7 +299,10 @@ void mic_pause(void) {
 }
 
 
+// Stopping the ADC keeps the last frame it finished, from before the pause, so
+// drop it, or the next read would join it to samples from after the pause.
 void mic_resume(void) {
+    ESP_ERROR_CHECK(adc_continuous_flush_pool(mic_handle));
     ESP_ERROR_CHECK(adc_continuous_start(mic_handle));
 }
 

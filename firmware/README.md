@@ -55,14 +55,16 @@ doesn't support them.
 ## How it works
 
 1. **Configure** (`config.c`): read jumpers JP5–JP7 to decide how many LEDs
-   are fitted, and pick the FFT size and sample rate from that.
+   are fitted, and pick the FFT size and sample rate from that and the
+   [LED pattern](#led-patterns).
 2. **Battery** (`battery.c`): take a first battery reading while the LEDs
    are still dark.
 3. **Settle** (`main.c`): for 3 seconds a white "scanning" animation runs
    on the wings while the mic sensitivity and the background floor adjust to
    the room.
-4. **Light show** (`main.c`, `leds.c`): forever, read a frame of mic samples,
-   apply a Blackman window and FFT, adjust the mic sensitivity, learn each
+4. **Light show** (`main.c`, `leds.c`): forever, read the next half frame of
+   mic samples and, with the half before it, remove DC, apply a Blackman
+   window and FFT, adjust the mic sensitivity, learn each
    bin's background floor and keep only the sound well above it, apply a
    peak-and-decay filter, and send the bins to the LEDs.  Every 10 seconds,
    check the battery.
@@ -70,13 +72,19 @@ doesn't support them.
 The ADC samples the mic in continuous (DMA) mode, at a rate set by the LED
 count (see [Frequency range](#frequency-range)), so the sample timing is set
 by hardware, not software delays, and other tasks such Bluetooth can't disturb
-it.  The driver keeps only the newest frame: if the FFT and LED update fall
-behind, older frames are dropped, so the lights never lag the sound by more
-than one frame (6.4 ms with 10 LEDs, up to 15.4 ms with 24).
+it.
 
-LEDs are driven in left/right pairs.  Each group of three FFT bins becomes
-one colour; the right wing gets it as GRB and the left wing with the channels
-rotated, so the two wings are equally bright but differently coloured.
+Each frame overlaps the one before by half, so the LEDs update every half
+frame: in pattern A every 3.2 ms with 10 LEDs, up to 7.7 ms with 24, and in
+patterns B and C twice that.  Updating only once a frame sampled a held
+note's level too slowly to follow quick changes in it, such as close partials
+beating, and turned them into a slow flutter.
+
+The driver hands over half a frame at a time and keeps only the newest: if
+the FFT and LED update fall behind, older halves are dropped, so the lights
+never lag the sound by more than a frame.  After a dropped half, the half kept
+from the last frame no longer leads straight into the next, so the next frame
+is read whole.
 
 ## LED count jumpers
 
@@ -89,32 +97,71 @@ adds LEDs on top of the base 10:
 | JP6    | 6    | +4   |
 | JP5    | 5    | +8   |
 
-The total is capped at 24.  The FFT size follows the LED count: 64 samples
-for up to 10 LEDs, 128 for up to 16, and 256 above that.
+The total is capped at 24.  The FFT size follows the LED count: in pattern
+A, 64 samples for up to 10 LEDs, 128 for up to 16, and 256 above that.
+Patterns B and C use twice those sizes, 128, 256 and 512.
+
+## LED patterns
+
+The strip alternates between the wings: even LEDs (0, 2, 4, ...) are on the
+right wing and odd ones on the left, so each pair of LEDs is the same place
+on both wings, and LEDs 0 and 1 are nearest the ESP32.  Each of an LED's red,
+green and blue channels shows how loud one FFT bin is.  `CONFIG_LEDS_PATTERN`
+in [`main/config.h`](main/config.h) picks which bin each channel shows, at
+compile time.  The default is C.
+
+- **A**: each pair shows three bins.  The right LED shows them as green, red
+  and blue, and the left LED with the channels rotated, as blue, green and
+  red.  So the two wings are equally bright but differently coloured.  A tone
+  in one bin is red, green or blue, a tone spread over two bins yellow, cyan
+  or magenta, and a broad sound white.
+- **B**: each channel shows its own bin, six per pair, lowest first: the
+  right then the left LED's red, then their green, then their blue.  So each
+  pair runs from red to blue, and the wings show alternate bins.
+- **C**: each channel shows its own bin.  The lowest third of the bins light
+  every LED's red in strip order, the middle third their green, and the top
+  third their blue.  So each colour shows a third of the range along the
+  wings: at the default top frequency, 0 to 781 Hz is red, 781 to 1563 Hz
+  green, and 1563 to 2344 Hz blue.
+
+So patterns B and C show twice as many bins as A, three per LED rather than
+three per pair.  With 24 LEDs, the first pair shows:
+
+| Pattern | Bins shown | LED 0 (right) red, green, blue | LED 1 (left) red, green, blue |
+|---------|------------|--------------------------------|-------------------------------|
+| A       | 36         | bins 1, 0, 2                   | bins 2, 1, 0                  |
+| B       | 72         | bins 0, 2, 4                   | bins 1, 3, 5                  |
+| C       | 72         | bins 0, 24, 48                 | bins 1, 25, 49                |
 
 ## Frequency range
 
-Every board shows the same range, from 0 Hz up to `CONFIG_LEDS_TOP_FREQ_HZ`
-(2344 Hz) in [`main/config.h`](main/config.h).  It's shared equally between
-the LED pairs, so more LEDs show it in finer steps.
+Every board and pattern shows the same range, from 0 Hz up to
+`CONFIG_LEDS_TOP_FREQ_HZ` (2344 Hz) in [`main/config.h`](main/config.h).  It's
+shared equally between the bins the LEDs show, so more LEDs, and patterns B
+and C, show it in finer steps.
 
-Each pair shows three FFT bins, one per colour channel, so the LEDs show the
-lowest LEDs * 3 / 2 bins.  A bin is the sample rate divided by the FFT size
+The LEDs show the lowest LEDs * 3 / 2 bins in pattern A, and the lowest
+LEDs * 3 in patterns B and C.  A bin is the sample rate divided by the FFT size
 wide, so `config_init()` picks the sample rate that makes those bins end at the
 top frequency:
 
-    sample rate = FFT size * top frequency / (LEDs * 3 / 2)
+    sample rate = FFT size * top frequency / bins shown
 
-| LEDs | FFT size | Sample rate | Each pair shows | Frame   |
-|------|----------|-------------|-----------------|---------|
-| 10   | 64       | 10.0 kHz    | 469 Hz          | 6.4 ms  |
-| 12   | 128      | 16.7 kHz    | 391 Hz          | 7.7 ms  |
-| 14   | 128      | 14.3 kHz    | 335 Hz          | 9.0 ms  |
-| 16   | 128      | 12.5 kHz    | 293 Hz          | 10.2 ms |
-| 18   | 256      | 22.2 kHz    | 260 Hz          | 11.5 ms |
-| 20   | 256      | 20.0 kHz    | 234 Hz          | 12.8 ms |
-| 22   | 256      | 18.2 kHz    | 213 Hz          | 14.1 ms |
-| 24   | 256      | 16.7 kHz    | 195 Hz          | 15.4 ms |
+Patterns B and C show twice as many bins with twice the FFT size, so they
+sample at the same rate as A.  Their bins are half as wide, but each frame
+takes twice as long to sample, so the LEDs update half as often, every half
+frame.
+
+| LEDs | Sample rate | FFT size (A / B, C) | Bin width (A / B, C) | Frame (A / B, C) |
+|------|-------------|---------------------|----------------------|------------------|
+| 10   | 10.0 kHz    | 64 / 128            | 156 / 78 Hz          | 6.4 / 12.8 ms    |
+| 12   | 16.7 kHz    | 128 / 256           | 130 / 65 Hz          | 7.7 / 15.4 ms    |
+| 14   | 14.3 kHz    | 128 / 256           | 112 / 56 Hz          | 9.0 / 17.9 ms    |
+| 16   | 12.5 kHz    | 128 / 256           | 98 / 49 Hz           | 10.2 / 20.5 ms   |
+| 18   | 22.2 kHz    | 256 / 512           | 87 / 43 Hz           | 11.5 / 23.0 ms   |
+| 20   | 20.0 kHz    | 256 / 512           | 78 / 39 Hz           | 12.8 / 25.6 ms   |
+| 22   | 18.2 kHz    | 256 / 512           | 71 / 36 Hz           | 14.1 / 28.2 ms   |
+| 24   | 16.7 kHz    | 256 / 512           | 65 / 33 Hz           | 15.4 / 30.7 ms   |
 
 The sample rate is always more than four times the top frequency.  Sound
 above half the sample rate folds back onto lower bins, and the mic's
@@ -151,11 +198,11 @@ All pins are defined in [`main/config.h`](main/config.h).
 | File                  | Purpose |
 |-----------------------|---------|
 | `main.c`              | Startup and the main sample → FFT → LED loop |
-| `config.c/h`          | Pin assignments, jumper-based LED count, FFT size, sample rate and top frequency |
+| `config.c/h`          | Pin assignments, jumper-based LED count, LED pattern, FFT size, sample rate and top frequency |
 | `mic.c/h`             | Continuous (DMA) sampling of the microphone, with ADC calibration, and automatic mic sensitivity |
 | `battery.c/h`         | Battery voltage readings, smoothing, and the low-battery decision |
-| `fft.c/h`             | FFT, windowing and magnitude (C port of arduinoFFT, GPL-3.0) |
-| `leds.c/h`            | WS2812B output over RMT, startup scanning animation, low-battery blink |
+| `fft.c/h`             | Fixed-point FFT of each frame: DC removal, Blackman window, FFT and bin levels in mV.  The ESP32-C3 has no FPU, so integer maths is much faster |
+| `leds.c/h`            | WS2812B output over RMT in each LED pattern, startup scanning animation, low-battery blink |
 | `led_strip_encoder.c/h` | RMT encoder for WS2812B (from the ESP-IDF examples) |
 | `digipot.c/h`         | SPI driver for the MCP41050 digital potentiometer |
 
@@ -233,7 +280,9 @@ The mic and the battery are both on ADC1, which can sample continuously or
 take oneshot readings but not both at once.  So `main.c` takes the first
 reading at power-on, before the mic starts.  After that, every 10 seconds it
 pauses the mic (`mic_pause()`), reads the battery and resumes the mic
-(`mic_resume()`).  This delays the next frame by at most a frame (15.4 ms).
+(`mic_resume()`).  Resuming drops what the ADC recorded before the pause, and
+the next frame is read whole, so this delays the next update by up to a frame
+(15.4 ms in pattern A, 30.7 ms in B and C).
 
 The voltage dips with the music as the LEDs draw current, so readings are
 smoothed.  The smoothed voltage moves about two thirds of the way to a new
@@ -246,9 +295,9 @@ doesn't flicker on and off around 3.6 V.  The LEDs and ESP32-C3 run from a
 While the battery is low, the first LED in each wing (the first pair on the
 strip, nearest the ESP32) blinks red for a quarter of a second every 3
 seconds.  It shows the music the rest of the time, and the other LEDs aren't
-affected.  The light
-show can't make both LEDs of a pair pure red, so the blink can't be mistaken
-for music.
+affected.  In pattern A the light show can't make both LEDs of a pair pure
+red, so the blink can't be mistaken for music.  In patterns B and C it can,
+when bass lights only the lowest two bins.
 
 What GPIO 0 measures depends on the board:
 
@@ -268,7 +317,8 @@ timing and brightness are in `leds.c`.
 
 Useful messages appear in the serial monitor:
 
-- `config`: which jumpers are closed, the LED count and the FFT size
+- `config`: which jumpers are closed, the LED count, the LED pattern and how
+  many bins it shows, the FFT size and the sample rate
 - `battery`: each reading, e.g. `3712 mV, smoothed 3698 mV`, and when the
   battery becomes low or stops being low
 - `main`: start and finish of the 3-second settling period, and each second,
@@ -276,4 +326,13 @@ Useful messages appear in the serial monitor:
   0.5 dB, e.g. `adjusted the floor up on 3 bins and down on 1, of 15`.  Gain
   changes aren't counted, since `mic` logs those.  In a steady room most bins
   stay put; when a crowd grows or a note is held, they go up.
+- `main`, each second of the light show: how many frames it processed, how
+  long each lasts and how far apart they are (half a frame), how many halves
+  of a frame the mic dropped because the frame before was still being
+  processed, and how long a frame took to process, on average and at most.  The average is split into steps: reading the samples (converting them
+  to mV, not waiting for them), the window (with removing DC), the FFT, the
+  magnitudes, and the rest (the floor, the colours, sending them to the LEDs,
+  the battery check and logging).  The light show keeps up while a frame takes
+  less time to process than half a frame takes to record.  Once it doesn't,
+  the mic drops halves of frames, and the LEDs miss that sound.
 - `mic`: each sensitivity change, e.g. `too quiet, sensitivity 128 -> 144`

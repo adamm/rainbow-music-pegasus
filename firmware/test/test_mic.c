@@ -22,12 +22,13 @@ static void boot(void)
     mic_cali_channel_handle = NULL;
     mic_sensitivity = 0;
     mic_sensitivity_update(false, false);  // clears its hold timers
+    mic_dropped_frames = 0;
+    mic_waited_us = 0;
     fake.adc_running = false;
 
-    _config_total_samples = FRAME_SAMPLES;
     _config_sample_freq_hz = SAMPLE_FREQ_HZ;
     digipot_init();
-    mic_init();
+    mic_init(FRAME_SAMPLES);
 }
 
 void setUp(void)
@@ -132,6 +133,54 @@ void test_read_frame_reads_no_further_than_the_frame(void)
 }
 
 
+// So the main loop can tell how long it spends processing frames, rather than
+// waiting for them.
+void test_read_frame_adds_up_the_time_it_waits_for_samples(void)
+{
+    fake.adc_read_chunk = FRAME_SAMPLES / 2;
+    fake.adc_read_wait_us = 2000;
+    for (int i = 0; i < 2 * FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 1650);
+    int mv[FRAME_SAMPLES];
+
+    mic_read_frame(mv, FRAME_SAMPLES);
+    TEST_ASSERT_EQUAL_INT64(4000, mic_time_waited_us());
+
+    fake.now_us += 10000;  // processing the frame
+    mic_read_frame(mv, FRAME_SAMPLES);
+    TEST_ASSERT_EQUAL_INT64(8000, mic_time_waited_us());
+}
+
+
+// Running each sample through the calibration curve is too slow for every
+// frame, so mic_init() converts every possible reading once.
+void test_read_frame_converts_samples_without_running_the_calibration_again(void)
+{
+    TEST_ASSERT_EQUAL(4096, fake.adc_cali_conversions);
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 4095 - i);
+
+    int mv[FRAME_SAMPLES];
+    mic_read_frame(mv, FRAME_SAMPLES);
+
+    TEST_ASSERT_EQUAL(4096, fake.adc_cali_conversions);
+    TEST_ASSERT_EQUAL(4095, mv[0]);
+    TEST_ASSERT_EQUAL(4095 - FRAME_SAMPLES + 1, mv[FRAME_SAMPLES - 1]);
+}
+
+
+// So the main loop can tell whether it keeps up with the mic.
+void test_frames_the_driver_drops_are_counted(void)
+{
+    TEST_ASSERT_EQUAL_UINT32(0, mic_frames_dropped());
+
+    fake_adc_drop_frame();
+    fake_adc_drop_frame();
+
+    TEST_ASSERT_EQUAL_UINT32(2, mic_frames_dropped());
+}
+
+
 void test_read_frame_reports_clipping_near_the_adc_rails(void)
 {
     static const struct {
@@ -189,6 +238,24 @@ void test_pause_stops_sampling_until_resume(void)
     int mv[FRAME_SAMPLES];
     mic_read_frame(mv, FRAME_SAMPLES);
     TEST_ASSERT_EACH_EQUAL_INT(1650, mv, FRAME_SAMPLES);
+}
+
+
+// Otherwise the next frame would join samples from before the pause to ones
+// from after it.
+void test_resume_drops_samples_from_before_the_pause(void)
+{
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 1000);
+    mic_pause();
+    mic_resume();
+    for (int i = 0; i < FRAME_SAMPLES; i++)
+        fake_adc_queue(MIC, 2000);
+
+    int mv[FRAME_SAMPLES];
+    mic_read_frame(mv, FRAME_SAMPLES);
+
+    TEST_ASSERT_EACH_EQUAL_INT(2000, mv, FRAME_SAMPLES);
 }
 
 
@@ -319,9 +386,13 @@ int main(void)
     RUN_TEST(test_read_frame_skips_results_from_other_channels);
     RUN_TEST(test_read_frame_keeps_reading_until_the_frame_is_full);
     RUN_TEST(test_read_frame_reads_no_further_than_the_frame);
+    RUN_TEST(test_read_frame_adds_up_the_time_it_waits_for_samples);
+    RUN_TEST(test_read_frame_converts_samples_without_running_the_calibration_again);
+    RUN_TEST(test_frames_the_driver_drops_are_counted);
     RUN_TEST(test_read_frame_reports_clipping_near_the_adc_rails);
     RUN_TEST(test_read_frame_without_calibration_assumes_3100mv_full_scale);
     RUN_TEST(test_pause_stops_sampling_until_resume);
+    RUN_TEST(test_resume_drops_samples_from_before_the_pause);
     RUN_TEST(test_sensitivity_starts_at_the_digipot_power_on_wiper);
     RUN_TEST(test_loud_lowers_sensitivity_by_a_quarter_once_held);
     RUN_TEST(test_loud_keeps_lowering_sensitivity_while_it_lasts);
