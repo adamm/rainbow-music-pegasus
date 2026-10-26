@@ -129,13 +129,24 @@ ready Spring 2027 as v1.2.
 - [X] Support a rechargable LiPo battery
 - [X] Low battery warning
 - [X] Replace USB-mini with USB-C for power
+- [ ] Support a longer external LED string at 5V power and signal
 - [ ] Implement "Set Mode" button
-- [ ] Add wifi support
-- [ ] Add bluetooth support
 - [ ] Release v1.2 for Calgary Makerfaire 2027
 - [ ] Sync with nearby horses for an enhanced light show
 - [ ] Control of colour modes and settings via Web Bluetooth
 - [ ] Firmware updates over BLE
+
+## AI Use Disclaimer
+
+This project was 100% derrived and created by me, with the following
+assistance/exceptions that were created by Claude:
+
+- [Schematic] Optimization of the analogue audio resistors and capacitors
+- [Firmware] Dynamic volume adjustment based upon audio input thresholds
+- [Firmware] Writing unit tests and a test harness
+- [Firmware] Optimization of the FFT algorithm for the ESP32-C3
+- [Firmware] Creating a process to filter out background audio in noisy rooms
+- [Documentation] Creating general and firmware READMEs
 
 ## License
 
